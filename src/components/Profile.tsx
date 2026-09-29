@@ -13,6 +13,11 @@ export const Profile: React.FC<ProfileProps> = ({ data, onClose }) => {
   const boosterActive = isBoosterActive(data);
   const boosterRemaining = getBoosterTimeRemaining(data);
 
+  // Calculate mastery levels based on games played
+  const memoryMastery = Math.min(100, data.statistics.gamesPlayedByMode.memoryFlip * 5);
+  const scrambleMastery = Math.min(100, data.statistics.scrambleWordsSolved * 2);
+  const builderMastery = Math.min(100, data.statistics.builderWordsCreated * 2);
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in overflow-y-auto">
       <div className="bg-white dark:bg-gray-800 rounded-3xl p-5 sm:p-6 max-w-md w-full shadow-2xl animate-scale-in my-4 max-h-[90vh] overflow-y-auto">
@@ -52,13 +57,23 @@ export const Profile: React.FC<ProfileProps> = ({ data, onClose }) => {
           </div>
           <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-xl text-center">
             <div className="text-2xl mb-1">🎮</div>
-            <div className="text-lg font-bold text-green-600 dark:text-green-400">{data.statistics.gamesWon}</div>
-            <div className="text-[10px] text-gray-500 dark:text-gray-400 uppercase">Games Won</div>
+            <div className="text-lg font-bold text-green-600 dark:text-green-400">{data.statistics.gamesPlayed}</div>
+            <div className="text-[10px] text-gray-500 dark:text-gray-400 uppercase">Games Played</div>
           </div>
           <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-xl text-center">
-            <div className="text-2xl mb-1">✨</div>
-            <div className="text-lg font-bold text-purple-600 dark:text-purple-400">{data.statistics.perfectRuns}</div>
-            <div className="text-[10px] text-gray-500 dark:text-gray-400 uppercase">Perfect Runs</div>
+            <div className="text-2xl mb-1">🏆</div>
+            <div className="text-lg font-bold text-purple-600 dark:text-purple-400">{data.achievementsUnlocked.length}</div>
+            <div className="text-[10px] text-gray-500 dark:text-gray-400 uppercase">Achievements</div>
+          </div>
+        </div>
+
+        {/* Game Mastery */}
+        <div className="mb-4">
+          <h3 className="text-sm font-bold text-gray-600 dark:text-gray-300 mb-2 uppercase tracking-wide">Game Mastery</h3>
+          <div className="space-y-2">
+            <MasteryBar icon="🧠" label="Memory Flip" percent={memoryMastery} />
+            <MasteryBar icon="🔀" label="Word Scramble" percent={scrambleMastery} />
+            <MasteryBar icon="🔤" label="Word Builder" percent={builderMastery} />
           </div>
         </div>
 
@@ -74,16 +89,9 @@ export const Profile: React.FC<ProfileProps> = ({ data, onClose }) => {
           </div>
         )}
 
-        {/* Achievements */}
-        <div className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl text-center">
-          <div className="text-sm font-medium text-gray-600 dark:text-gray-300">
-            🏆 {data.achievementsUnlocked.length} Achievements Unlocked
-          </div>
-        </div>
-
         <button
           onClick={onClose}
-          className="w-full mt-4 py-3 px-6 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 font-bold rounded-xl transition-all duration-200"
+          className="w-full py-3 px-6 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 font-bold rounded-xl transition-all duration-200"
         >
           CLOSE
         </button>
@@ -91,3 +99,21 @@ export const Profile: React.FC<ProfileProps> = ({ data, onClose }) => {
     </div>
   );
 };
+
+const MasteryBar: React.FC<{ icon: string; label: string; percent: number }> = ({ icon, label, percent }) => (
+  <div className="flex items-center gap-2">
+    <span className="text-lg">{icon}</span>
+    <div className="flex-1">
+      <div className="flex justify-between text-xs mb-0.5">
+        <span className="text-gray-600 dark:text-gray-300">{label}</span>
+        <span className="text-gray-500 dark:text-gray-400">{Math.round(percent)}%</span>
+      </div>
+      <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+        <div 
+          className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-500"
+          style={{ width: `${percent}%` }}
+        />
+      </div>
+    </div>
+  </div>
+);

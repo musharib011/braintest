@@ -25,8 +25,27 @@ export const Achievements: React.FC<AchievementsProps> = ({ data, onClose }) => 
       case 'bestTimeMedium': return stats.bestTimeMedium !== null ? Math.max(0, achievement.requirement - stats.bestTimeMedium) > 0 ? 0 : achievement.requirement : 0;
       case '_level': return data.level;
       case '_streak': return data.streak.longest;
-      case '_accuracy': return 0; // tracked separately
-      case '_hardModeWins': return 0; // tracked separately
+      // Word Scramble
+      case 'scrambleGamesPlayed': return stats.scrambleGamesPlayed;
+      case 'scrambleWordsSolved': return stats.scrambleWordsSolved;
+      case 'scramblePerfectRuns': return stats.scramblePerfectRuns;
+      case 'scrambleHighestCombo': return stats.scrambleHighestCombo;
+      // Word Builder
+      case 'builderGamesPlayed': return stats.builderGamesPlayed;
+      case 'builderWordsCreated': return stats.builderWordsCreated;
+      case 'builderPerfectRuns': return stats.builderPerfectRuns;
+      case 'builderHighestCombo': return stats.builderHighestCombo;
+      case '_builderLongestWord': return stats.builderLongestWord.length;
+      // Cross-game
+      case '_gamesPlayedByMode': {
+        const m = stats.gamesPlayedByMode;
+        return (m.memoryFlip > 0 ? 1 : 0) + (m.wordScramble > 0 ? 1 : 0) + (m.wordBuilder > 0 ? 1 : 0);
+      }
+      case '_totalGamesAllModes': {
+        const m = stats.gamesPlayedByMode;
+        const modesPlayed = [m.memoryFlip > 0, m.wordScramble > 0, m.wordBuilder > 0].filter(Boolean).length;
+        return modesPlayed >= 2 ? (m.memoryFlip + m.wordScramble + m.wordBuilder) : 0;
+      }
       default: return 0;
     }
   };

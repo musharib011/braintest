@@ -83,12 +83,15 @@ export interface Booster {
   expiresAt: number;
 }
 
+export type GameMode = 'memoryFlip' | 'wordScramble' | 'wordBuilder';
+
 export interface DailyChallenge {
   id: string;
   description: string;
   type: string;
   target: number;
   difficulty?: Difficulty;
+  gameMode?: GameMode;
   rewardCoins: number;
   rewardXP: number;
 }
@@ -116,6 +119,25 @@ export interface PlayerData {
     bestTimeMedium: number | null;
     bestTimeHard: number | null;
     dailyChallengesCompleted: number;
+    // Word Scramble stats
+    scrambleGamesPlayed: number;
+    scrambleWordsSolved: number;
+    scramblePerfectRuns: number;
+    scrambleBestScore: number;
+    scrambleHighestCombo: number;
+    // Word Builder stats
+    builderGamesPlayed: number;
+    builderWordsCreated: number;
+    builderPerfectRuns: number;
+    builderBestScore: number;
+    builderHighestCombo: number;
+    builderLongestWord: string;
+    // Cross-game stats
+    gamesPlayedByMode: {
+      memoryFlip: number;
+      wordScramble: number;
+      wordBuilder: number;
+    };
   };
   dailyChallenge: {
     date: string;

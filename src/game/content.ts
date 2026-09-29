@@ -49,6 +49,23 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: 'pairs_500', name: 'Memory Expert', description: 'Match 500 pairs total', icon: '🧩', requirement: 500, rewardCoins: 500, rewardXP: 200, statKey: 'totalPairsMatched' },
   { id: 'daily_5', name: 'Daily Player', description: 'Complete 5 daily challenges', icon: '📅', requirement: 5, rewardCoins: 300, rewardXP: 150, statKey: 'dailyChallengesCompleted' },
   { id: 'streak_7', name: 'Streak Master', description: 'Reach a 7-day streak', icon: '🔥', requirement: 7, rewardCoins: 500, rewardXP: 200, statKey: '_streak' },
+  // Word Scramble achievements
+  { id: 'scramble_first', name: 'First Word', description: 'Solve your first Word Scramble', icon: '🔀', requirement: 1, rewardCoins: 20, rewardXP: 10, statKey: 'scrambleGamesPlayed' },
+  { id: 'scramble_10', name: 'Word Solver', description: 'Solve 10 Word Scrambles', icon: '📝', requirement: 10, rewardCoins: 100, rewardXP: 50, statKey: 'scrambleGamesPlayed' },
+  { id: 'scramble_25', name: 'Scrambler', description: 'Solve 25 scrambled words', icon: '🔤', requirement: 25, rewardCoins: 200, rewardXP: 100, statKey: 'scrambleWordsSolved' },
+  { id: 'scramble_100', name: 'Word Master', description: 'Solve 100 scrambled words', icon: '🧠', requirement: 100, rewardCoins: 500, rewardXP: 200, statKey: 'scrambleWordsSolved' },
+  { id: 'scramble_perfect', name: 'Perfect Scramble', description: 'Complete a perfect Word Scramble round', icon: '💯', requirement: 1, rewardCoins: 150, rewardXP: 75, statKey: 'scramblePerfectRuns' },
+  { id: 'scramble_combo', name: 'Scramble Combo', description: 'Reach combo x5 in Word Scramble', icon: '⚡', requirement: 5, rewardCoins: 150, rewardXP: 75, statKey: 'scrambleHighestCombo' },
+  // Word Builder achievements
+  { id: 'builder_first', name: 'First Builder', description: 'Create your first Word Builder word', icon: '🏗️', requirement: 1, rewardCoins: 20, rewardXP: 10, statKey: 'builderGamesPlayed' },
+  { id: 'builder_10', name: 'Word Collector', description: 'Create 100 valid words', icon: '📚', requirement: 100, rewardCoins: 200, rewardXP: 100, statKey: 'builderWordsCreated' },
+  { id: 'builder_500', name: 'Wordsmith', description: 'Create 500 valid words', icon: '✍️', requirement: 500, rewardCoins: 500, rewardXP: 200, statKey: 'builderWordsCreated' },
+  { id: 'builder_long', name: 'Long Word', description: 'Create a word with 8+ letters', icon: '📏', requirement: 8, rewardCoins: 150, rewardXP: 75, statKey: '_builderLongestWord' },
+  { id: 'builder_combo', name: 'Builder Combo', description: 'Reach combo x10 in Word Builder', icon: '🔥', requirement: 10, rewardCoins: 200, rewardXP: 100, statKey: 'builderHighestCombo' },
+  { id: 'builder_perfect', name: 'Perfect Builder', description: 'Complete a perfect Word Builder round', icon: '🎯', requirement: 1, rewardCoins: 150, rewardXP: 75, statKey: 'builderPerfectRuns' },
+  // Cross-game achievements
+  { id: 'brain_explorer', name: 'Brain Explorer', description: 'Play all three game modes', icon: '🧩', requirement: 3, rewardCoins: 300, rewardXP: 150, statKey: '_gamesPlayedByMode' },
+  { id: 'well_rounded', name: 'Well Rounded', description: 'Complete 10 games across at least 2 modes', icon: '🌟', requirement: 10, rewardCoins: 400, rewardXP: 200, statKey: '_totalGamesAllModes' },
 ];
 
 export function getSkinById(id: string): Skin | undefined {

@@ -148,16 +148,31 @@ export function calculateGameCompleteReward(difficulty: Difficulty, accuracy: nu
 
 // Daily Challenge System
 export const DAILY_CHALLENGES = [
-  { id: 'easy_accuracy', description: 'Complete Easy Mode with 90%+ accuracy', type: 'accuracy', target: 90, difficulty: 'easy' as Difficulty, rewardCoins: 250, rewardXP: 100 },
-  { id: 'medium_speed', description: 'Complete Medium Mode in under 90 seconds', type: 'time', target: 90, difficulty: 'medium' as Difficulty, rewardCoins: 300, rewardXP: 120 },
-  { id: 'hard_moves', description: 'Complete Hard Mode with fewer than 70 moves', type: 'moves', target: 70, difficulty: 'hard' as Difficulty, rewardCoins: 400, rewardXP: 150 },
-  { id: 'pairs_25', description: 'Match 25 pairs today', type: 'pairs', target: 25, rewardCoins: 200, rewardXP: 80 },
-  { id: 'games_3', description: 'Complete 3 games today', type: 'games', target: 3, rewardCoins: 150, rewardXP: 60 },
-  { id: 'combo_5', description: 'Reach combo x5 in a single game', type: 'combo', target: 5, rewardCoins: 200, rewardXP: 80 },
-  { id: 'perfect', description: 'Complete a perfect run (no mismatches)', type: 'perfect', target: 1, rewardCoins: 350, rewardXP: 140 },
-  { id: 'easy_speed', description: 'Complete Easy Mode in under 30 seconds', type: 'time', target: 30, difficulty: 'easy' as Difficulty, rewardCoins: 250, rewardXP: 100 },
-  { id: 'medium_accuracy', description: 'Complete Medium Mode with 85%+ accuracy', type: 'accuracy', target: 85, difficulty: 'medium' as Difficulty, rewardCoins: 300, rewardXP: 120 },
-  { id: 'hard_complete', description: 'Complete Hard Mode', type: 'complete', target: 1, difficulty: 'hard' as Difficulty, rewardCoins: 350, rewardXP: 140 },
+  // Memory Flip challenges
+  { id: 'easy_accuracy', description: 'Complete Easy Mode with 90%+ accuracy', type: 'accuracy', target: 90, difficulty: 'easy' as Difficulty, gameMode: 'memoryFlip' as const, rewardCoins: 250, rewardXP: 100 },
+  { id: 'medium_speed', description: 'Complete Medium Mode in under 90 seconds', type: 'time', target: 90, difficulty: 'medium' as Difficulty, gameMode: 'memoryFlip' as const, rewardCoins: 300, rewardXP: 120 },
+  { id: 'hard_moves', description: 'Complete Hard Mode with fewer than 70 moves', type: 'moves', target: 70, difficulty: 'hard' as Difficulty, gameMode: 'memoryFlip' as const, rewardCoins: 400, rewardXP: 150 },
+  { id: 'pairs_25', description: 'Match 25 pairs today', type: 'pairs', target: 25, gameMode: 'memoryFlip' as const, rewardCoins: 200, rewardXP: 80 },
+  { id: 'combo_5', description: 'Reach combo x5 in a single game', type: 'combo', target: 5, gameMode: 'memoryFlip' as const, rewardCoins: 200, rewardXP: 80 },
+  { id: 'perfect', description: 'Complete a perfect run (no mismatches)', type: 'perfect', target: 1, gameMode: 'memoryFlip' as const, rewardCoins: 350, rewardXP: 140 },
+  { id: 'easy_speed', description: 'Complete Easy Mode in under 30 seconds', type: 'time', target: 30, difficulty: 'easy' as Difficulty, gameMode: 'memoryFlip' as const, rewardCoins: 250, rewardXP: 100 },
+  { id: 'medium_accuracy', description: 'Complete Medium Mode with 85%+ accuracy', type: 'accuracy', target: 85, difficulty: 'medium' as Difficulty, gameMode: 'memoryFlip' as const, rewardCoins: 300, rewardXP: 120 },
+  { id: 'hard_complete', description: 'Complete Hard Mode', type: 'complete', target: 1, difficulty: 'hard' as Difficulty, gameMode: 'memoryFlip' as const, rewardCoins: 350, rewardXP: 140 },
+  // Word Scramble challenges
+  { id: 'scramble_5', description: 'Solve 5 words in Word Scramble', type: 'words', target: 5, gameMode: 'wordScramble' as const, rewardCoins: 200, rewardXP: 80 },
+  { id: 'scramble_10', description: 'Solve 10 words in Word Scramble', type: 'words', target: 10, gameMode: 'wordScramble' as const, rewardCoins: 300, rewardXP: 120 },
+  { id: 'scramble_perfect', description: 'Complete a perfect Word Scramble round', type: 'perfect', target: 1, gameMode: 'wordScramble' as const, rewardCoins: 350, rewardXP: 140 },
+  { id: 'scramble_hard', description: 'Solve a Hard word in Word Scramble', type: 'difficulty_complete', target: 1, difficulty: 'hard' as Difficulty, gameMode: 'wordScramble' as const, rewardCoins: 400, rewardXP: 150 },
+  { id: 'scramble_combo', description: 'Reach combo x5 in Word Scramble', type: 'combo', target: 5, gameMode: 'wordScramble' as const, rewardCoins: 250, rewardXP: 100 },
+  // Word Builder challenges
+  { id: 'builder_10', description: 'Find 10 words in Word Builder', type: 'words', target: 10, gameMode: 'wordBuilder' as const, rewardCoins: 250, rewardXP: 100 },
+  { id: 'builder_15', description: 'Find 15 words in Word Builder', type: 'words', target: 15, gameMode: 'wordBuilder' as const, rewardCoins: 350, rewardXP: 140 },
+  { id: 'builder_long', description: 'Find a 7+ letter word in Word Builder', type: 'longest_word', target: 7, gameMode: 'wordBuilder' as const, rewardCoins: 300, rewardXP: 120 },
+  { id: 'builder_perfect', description: 'Complete a perfect Word Builder round', type: 'perfect', target: 1, gameMode: 'wordBuilder' as const, rewardCoins: 400, rewardXP: 150 },
+  { id: 'builder_combo', description: 'Reach combo x8 in Word Builder', type: 'combo', target: 8, gameMode: 'wordBuilder' as const, rewardCoins: 300, rewardXP: 120 },
+  // Cross-game challenges
+  { id: 'games_3', description: 'Complete 3 games today (any mode)', type: 'games', target: 3, rewardCoins: 150, rewardXP: 60 },
+  { id: 'xp_500', description: 'Earn 500 XP today', type: 'xp', target: 500, rewardCoins: 200, rewardXP: 80 },
 ];
 
 export function getDailyChallenge(): typeof DAILY_CHALLENGES[0] {

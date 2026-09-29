@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Difficulty, GameState, BestScore, PlayerData } from './game/types';
+import { Difficulty, GameState, BestScore, PlayerData, GameMode } from './game/types';
 import { createInitialGameState, calculateScore, calculateAccuracy, addXP, calculateMatchReward, calculateGameCompleteReward, checkDailyChallengeCompletion, updateStreak, getDailyChallenge, isBoosterActive } from './game/logic';
+import { calculateScrambleRewards, calculateBuilderRewards } from './game/wordLogic';
 import { getTodayString } from './game/storage';
 import { loadGameData, saveGameData, resetGameData, loadBestScore, saveBestScore, isNewBestScore } from './game/storage';
 import { playFlipSound, playMatchSound, playMismatchSound, playWinSound, playClickSound, playLevelUpSound, playAchievementSound, playComboSound } from './game/sounds';
 import { ACHIEVEMENTS, SKINS } from './game/content';
-import { GameMenu } from './components/GameMenu';
+import { GameHub } from './components/GameHub';
 import { GameBoard } from './components/GameBoard';
 import { GameHUD } from './components/GameHUD';
 import { GameOverScreen } from './components/GameOverScreen';
@@ -17,12 +18,15 @@ import { Profile } from './components/Profile';
 import { Statistics } from './components/Statistics';
 import { DailyChallenge } from './components/DailyChallenge';
 import { Notifications, Notification } from './components/Notifications';
+import { WordScramble } from './components/WordScramble';
+import { WordBuilder } from './components/WordBuilder';
+import { SettingsPanel } from './components/SettingsPanel';
 
-type Screen = 'menu' | 'game';
-type Modal = null | 'shop' | 'achievements' | 'profile' | 'statistics' | 'daily' | 'howToPlay';
+type Screen = 'hub' | 'memoryFlip' | 'wordScramble' | 'wordBuilder';
+type Modal = null | 'shop' | 'achievements' | 'profile' | 'statistics' | 'daily' | 'howToPlay' | 'settings';
 
 function App() {
-  const [screen, setScreen] = useState<Screen>('menu');
+  const [screen, setScreen] = useState<Screen>('hub');
   const [difficulty, setDifficulty] = useState<Difficulty>('easy');
   const [gameState, setGameState] = useState<GameState>(() => createInitialGameState('easy'));
   const [playerData, setPlayerData] = useState<PlayerData>(() => loadGameData());
@@ -50,7 +54,7 @@ function App() {
 
   // Timer
   useEffect(() => {
-    if (screen !== 'game') return;
+    if (screen !== 'memoryFlip') return;
     if (gameState.gameStarted && !gameState.gameFinished && !gameState.paused) {
       timerRef.current = window.setInterval(() => {
         setGameState(prev => ({ ...prev, timeElapsed: prev.timeElapsed + 1 }));
@@ -71,7 +75,7 @@ function App() {
 
   // Auto-pause on tab hidden
   useEffect(() => {
-    if (screen !== 'game') return;
+    if (screen !== 'memoryFlip') return;
     const handleVisibility = () => {
       if (document.hidden && gameState.gameStarted && !gameState.gameFinished && !gameState.paused) {
         setGameState(prev => ({ ...prev, paused: true }));
@@ -123,6 +127,29 @@ function App() {
         case 'bestTimeMedium': current = newData.statistics.bestTimeMedium !== null && newData.statistics.bestTimeMedium <= achievement.requirement ? achievement.requirement : 0; break;
         case '_level': current = newData.level; break;
         case '_streak': current = newData.streak.longest; break;
+        // Word Scramble stats
+        case 'scrambleGamesPlayed': current = newData.statistics.scrambleGamesPlayed; break;
+        case 'scrambleWordsSolved': current = newData.statistics.scrambleWordsSolved; break;
+        case 'scramblePerfectRuns': current = newData.statistics.scramblePerfectRuns; break;
+        case 'scrambleHighestCombo': current = newData.statistics.scrambleHighestCombo; break;
+        // Word Builder stats
+        case 'builderGamesPlayed': current = newData.statistics.builderGamesPlayed; break;
+        case 'builderWordsCreated': current = newData.statistics.builderWordsCreated; break;
+        case 'builderPerfectRuns': current = newData.statistics.builderPerfectRuns; break;
+        case 'builderHighestCombo': current = newData.statistics.builderHighestCombo; break;
+        case '_builderLongestWord': current = newData.statistics.builderLongestWord.length; break;
+        // Cross-game stats
+        case '_gamesPlayedByMode': {
+          const modes = newData.statistics.gamesPlayedByMode;
+          current = (modes.memoryFlip > 0 ? 1 : 0) + (modes.wordScramble > 0 ? 1 : 0) + (modes.wordBuilder > 0 ? 1 : 0);
+          break;
+        }
+        case '_totalGamesAllModes': {
+          const m = newData.statistics.gamesPlayedByMode;
+          const modesPlayed = [m.memoryFlip > 0, m.wordScramble > 0, m.wordBuilder > 0].filter(Boolean).length;
+          current = modesPlayed >= 2 ? (m.memoryFlip + m.wordScramble + m.wordBuilder) : 0;
+          break;
+        }
         default: continue;
       }
 
@@ -160,7 +187,7 @@ function App() {
     playSoundIfEnabled(playClickSound);
     const newState = createInitialGameState(difficulty);
     setGameState(newState);
-    setScreen('game');
+    setScreen('memoryFlip');
     setIsNewBest(false);
     setBestScore(loadBestScore(difficulty));
     
@@ -169,7 +196,14 @@ function App() {
       const result = addXP(prev, 5);
       return {
         ...result.newData,
-        statistics: { ...result.newData.statistics, gamesPlayed: result.newData.statistics.gamesPlayed + 1 },
+        statistics: { 
+          ...result.newData.statistics, 
+          gamesPlayed: result.newData.statistics.gamesPlayed + 1,
+          gamesPlayedByMode: {
+            ...result.newData.statistics.gamesPlayedByMode,
+            memoryFlip: result.newData.statistics.gamesPlayedByMode.memoryFlip + 1,
+          },
+        },
       };
     });
     addNotification('xp', '+5 XP', '✨');
@@ -187,7 +221,14 @@ function App() {
       const result = addXP(prev, 5);
       return {
         ...result.newData,
-        statistics: { ...result.newData.statistics, gamesPlayed: result.newData.statistics.gamesPlayed + 1 },
+        statistics: { 
+          ...result.newData.statistics, 
+          gamesPlayed: result.newData.statistics.gamesPlayed + 1,
+          gamesPlayedByMode: {
+            ...result.newData.statistics.gamesPlayedByMode,
+            memoryFlip: result.newData.statistics.gamesPlayedByMode.memoryFlip + 1,
+          },
+        },
       };
     });
   }, [difficulty, playSoundIfEnabled, clearMismatchTimeout]);
@@ -196,7 +237,7 @@ function App() {
     playSoundIfEnabled(playClickSound);
     if (timerRef.current !== null) { clearInterval(timerRef.current); timerRef.current = null; }
     clearMismatchTimeout();
-    setScreen('menu');
+    setScreen('hub');
   }, [playSoundIfEnabled, clearMismatchTimeout]);
 
   const handlePause = useCallback(() => {
@@ -481,33 +522,141 @@ function App() {
     addNotification('xp', 'Progress reset', '🗑️');
   }, [addNotification]);
 
+  // Word Scramble completion handler
+  const handleWordScrambleComplete = useCallback((result: {
+    score: number;
+    wordsSolved: number;
+    maxCombo: number;
+    timeElapsed: number;
+    perfectRun: boolean;
+    coinsEarned: number;
+    xpEarned: number;
+  }) => {
+    setPlayerData(prev => {
+      let newData = {
+        ...prev,
+        coins: prev.coins + result.coinsEarned,
+        statistics: {
+          ...prev.statistics,
+          scrambleGamesPlayed: prev.statistics.scrambleGamesPlayed + 1,
+          scrambleWordsSolved: prev.statistics.scrambleWordsSolved + result.wordsSolved,
+          scrambleBestScore: Math.max(prev.statistics.scrambleBestScore, result.score),
+          scrambleHighestCombo: Math.max(prev.statistics.scrambleHighestCombo, result.maxCombo),
+          scramblePerfectRuns: prev.statistics.scramblePerfectRuns + (result.perfectRun ? 1 : 0),
+          totalCoinsEarned: prev.statistics.totalCoinsEarned + result.coinsEarned,
+          gamesPlayedByMode: {
+            ...prev.statistics.gamesPlayedByMode,
+            wordScramble: prev.statistics.gamesPlayedByMode.wordScramble + 1,
+          },
+        },
+      };
+
+      const xpResult = addXP(newData, result.xpEarned);
+      newData = xpResult.newData;
+
+      if (result.coinsEarned > 0) addNotification('coins', `+${result.coinsEarned} coins`, '🪙');
+      if (result.xpEarned > 0) addNotification('xp', `+${result.xpEarned} XP`, '✨');
+      if (xpResult.levelsGained > 0) {
+        addNotification('levelup', `Level ${newData.level}!`, '🎉');
+        playSoundIfEnabled(playLevelUpSound);
+      }
+      if (result.perfectRun) {
+        addNotification('perfect', 'Perfect Run!', '✨');
+      }
+
+      // Check achievements
+      newData = checkAchievements(newData);
+
+      return newData;
+    });
+  }, [addNotification, playSoundIfEnabled, checkAchievements]);
+
+  // Word Builder completion handler
+  const handleWordBuilderComplete = useCallback((result: {
+    score: number;
+    wordsFound: number;
+    maxCombo: number;
+    longestWord: string;
+    timeElapsed: number;
+    perfectRun: boolean;
+    coinsEarned: number;
+    xpEarned: number;
+  }) => {
+    setPlayerData(prev => {
+      let newData = {
+        ...prev,
+        coins: prev.coins + result.coinsEarned,
+        statistics: {
+          ...prev.statistics,
+          builderGamesPlayed: prev.statistics.builderGamesPlayed + 1,
+          builderWordsCreated: prev.statistics.builderWordsCreated + result.wordsFound,
+          builderBestScore: Math.max(prev.statistics.builderBestScore, result.score),
+          builderHighestCombo: Math.max(prev.statistics.builderHighestCombo, result.maxCombo),
+          builderPerfectRuns: prev.statistics.builderPerfectRuns + (result.perfectRun ? 1 : 0),
+          builderLongestWord: result.longestWord.length > prev.statistics.builderLongestWord.length ? result.longestWord : prev.statistics.builderLongestWord,
+          totalCoinsEarned: prev.statistics.totalCoinsEarned + result.coinsEarned,
+          gamesPlayedByMode: {
+            ...prev.statistics.gamesPlayedByMode,
+            wordBuilder: prev.statistics.gamesPlayedByMode.wordBuilder + 1,
+          },
+        },
+      };
+
+      const xpResult = addXP(newData, result.xpEarned);
+      newData = xpResult.newData;
+
+      if (result.coinsEarned > 0) addNotification('coins', `+${result.coinsEarned} coins`, '🪙');
+      if (result.xpEarned > 0) addNotification('xp', `+${result.xpEarned} XP`, '✨');
+      if (xpResult.levelsGained > 0) {
+        addNotification('levelup', `Level ${newData.level}!`, '🎉');
+        playSoundIfEnabled(playLevelUpSound);
+      }
+      if (result.perfectRun) {
+        addNotification('perfect', 'Perfect Run!', '✨');
+      }
+
+      // Check achievements
+      newData = checkAchievements(newData);
+
+      return newData;
+    });
+  }, [addNotification, playSoundIfEnabled, checkAchievements]);
+
   const accuracy = gameState.totalAttempts > 0 ? calculateAccuracy(gameState.matchedPairs, gameState.totalAttempts) : 0;
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${playerData.settings.theme === 'dark' ? 'bg-gray-900' : 'bg-gradient-to-br from-slate-50 to-indigo-50'}`}>
       <Notifications notifications={notifications} onRemove={removeNotification} />
       
-      {screen === 'menu' && (
-        <GameMenu
+      {screen === 'hub' && (
+        <GameHub
+          playerData={playerData}
           difficulty={difficulty}
           onDifficultyChange={handleDifficultyChange}
-          onStartGame={handleStartGame}
-          onShowHowToPlay={() => setModal('howToPlay')}
+          onSelectGame={(mode: GameMode) => {
+            if (mode === 'memoryFlip') {
+              handleStartGame();
+            } else if (mode === 'wordScramble') {
+              setScreen('wordScramble');
+            } else if (mode === 'wordBuilder') {
+              setScreen('wordBuilder');
+            }
+          }}
           onOpenShop={() => setModal('shop')}
           onOpenAchievements={() => setModal('achievements')}
           onOpenProfile={() => setModal('profile')}
           onOpenStatistics={() => setModal('statistics')}
           onOpenDaily={() => setModal('daily')}
-          playerData={playerData}
+          onOpenSettings={() => setModal('settings')}
+          onOpenHowToPlay={() => setModal('howToPlay')}
           soundEnabled={playerData.settings.soundEnabled}
           onToggleSound={handleToggleSound}
           theme={playerData.settings.theme}
           onToggleTheme={handleToggleTheme}
-          onResetProgress={handleResetProgress}
         />
       )}
       
-      {screen === 'game' && (
+      {screen === 'memoryFlip' && (
         <div className="min-h-screen flex flex-col items-center p-3 sm:p-4 pt-4 sm:pt-6">
           <GameHUD
             score={gameState.score}
@@ -535,7 +684,7 @@ function App() {
         </div>
       )}
       
-      {gameState.gameFinished && screen === 'game' && (
+      {gameState.gameFinished && screen === 'memoryFlip' && (
         <GameOverScreen
           score={gameState.score}
           timeElapsed={gameState.timeElapsed}
@@ -553,8 +702,30 @@ function App() {
         />
       )}
       
-      {gameState.paused && !gameState.gameFinished && screen === 'game' && (
+      {gameState.paused && !gameState.gameFinished && screen === 'memoryFlip' && (
         <PauseOverlay onResume={handleResume} onRestart={handleRestart} onQuitToMenu={handleQuitToMenu} />
+      )}
+
+      {screen === 'wordScramble' && (
+        <WordScramble
+          difficulty={difficulty}
+          playerData={playerData}
+          onGameComplete={handleWordScrambleComplete}
+          onBack={() => setScreen('hub')}
+          onNotification={addNotification}
+          soundEnabled={playerData.settings.soundEnabled}
+        />
+      )}
+
+      {screen === 'wordBuilder' && (
+        <WordBuilder
+          difficulty={difficulty}
+          playerData={playerData}
+          onGameComplete={handleWordBuilderComplete}
+          onBack={() => setScreen('hub')}
+          onNotification={addNotification}
+          soundEnabled={playerData.settings.soundEnabled}
+        />
       )}
       
       {modal === 'howToPlay' && <HowToPlay onClose={() => setModal(null)} />}
@@ -562,7 +733,8 @@ function App() {
       {modal === 'achievements' && <Achievements data={playerData} onClose={() => setModal(null)} />}
       {modal === 'profile' && <Profile data={playerData} onClose={() => setModal(null)} />}
       {modal === 'statistics' && <Statistics data={playerData} onClose={() => setModal(null)} />}
-      {modal === 'daily' && <DailyChallenge data={playerData} onClose={() => setModal(null)} onStartChallenge={handleStartGame} />}
+      {modal === 'daily' && <DailyChallenge data={playerData} onClose={() => setModal(null)} onStartChallenge={() => { setModal(null); handleStartGame(); }} />}
+      {modal === 'settings' && <SettingsPanel playerData={playerData} onClose={() => setModal(null)} onToggleSound={handleToggleSound} onToggleTheme={handleToggleTheme} onResetProgress={handleResetProgress} />}
     </div>
   );
 }
