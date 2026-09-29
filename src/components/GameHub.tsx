@@ -3,7 +3,7 @@ import { PlayerData, Difficulty, DIFFICULTY_CONFIGS, BestScore } from '../game/t
 import { formatScore, getXPForLevel, isBoosterActive, getBoosterTimeRemaining, formatTime } from '../game/logic';
 import { loadBestScore } from '../game/storage';
 
-type GameMode = 'memoryFlip' | 'wordScramble' | 'wordBuilder' | 'mathChallenge' | 'logicPuzzles' | 'matchChallenge' | 'focusGame' | 'patternRecognition' | 'knowledgeQuiz';
+type GameMode = 'memoryFlip' | 'wordScramble' | 'wordBuilder' | 'mathChallenge' | 'logicPuzzles' | 'patternRecognition' | 'knowledgeQuiz';
 
 interface GameHubProps {
   playerData: PlayerData;
@@ -217,67 +217,10 @@ export const GameHub: React.FC<GameHubProps> = ({
                   </button>
                 </div>
               </div>
-            </div>
           </div>
+        </div>
 
-          {/* Match Challenge */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
-            <div className="flex items-start gap-3">
-              <div className="text-3xl">🔗</div>
-              <div className="flex-1">
-                <h3 className="font-bold text-gray-800 dark:text-white">MATCH CHALLENGE</h3>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Match pairs quickly before time runs out.</p>
-                <div className="flex items-center gap-2 mt-2">
-                  <select
-                    value={gameDifficulties.matchChallenge}
-                    onChange={(e) => onDifficultyChange('matchChallenge', e.target.value as Difficulty)}
-                    className="text-xs px-2 py-1 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200"
-                  >
-                    <option value="easy">Easy</option>
-                    <option value="medium">Medium</option>
-                    <option value="hard">Hard</option>
-                  </select>
-                  <button
-                    onClick={() => onSelectGame('matchChallenge')}
-                    className="flex-1 py-1.5 px-4 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white text-xs font-bold rounded-lg shadow transition-all transform hover:scale-[1.02] active:scale-[0.98]"
-                  >
-                    ▶ PLAY
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Focus Game */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
-            <div className="flex items-start gap-3">
-              <div className="text-3xl">🎯</div>
-              <div className="flex-1">
-                <h3 className="font-bold text-gray-800 dark:text-white">FOCUS GAME</h3>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Test your attention and reaction speed.</p>
-                <div className="flex items-center gap-2 mt-2">
-                  <select
-                    value={gameDifficulties.focusGame}
-                    onChange={(e) => onDifficultyChange('focusGame', e.target.value as Difficulty)}
-                    className="text-xs px-2 py-1 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200"
-                  >
-                    <option value="easy">Easy</option>
-                    <option value="medium">Medium</option>
-                    <option value="hard">Hard</option>
-                  </select>
-                  <button
-                    onClick={() => onSelectGame('focusGame')}
-                    className="flex-1 py-1.5 px-4 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white text-xs font-bold rounded-lg shadow transition-all transform hover:scale-[1.02] active:scale-[0.98]"
-                  >
-                    ▶ PLAY
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Pattern Recognition */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
+          {/* Pattern Recognition */}          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
             <div className="flex items-start gap-3">
               <div className="text-3xl">🔷</div>
               <div className="flex-1">

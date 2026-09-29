@@ -23,18 +23,14 @@ import { WordBuilder } from './components/WordBuilder';
 import { SettingsPanel } from './components/SettingsPanel';
 import { MathChallenge } from './components/MathChallenge';
 import { LogicPuzzles } from './components/LogicPuzzles';
-import { MatchChallenge } from './components/MatchChallenge';
-import { FocusGame } from './components/FocusGame';
 import { PatternRecognition } from './components/PatternRecognition';
 import { KnowledgeQuiz } from './components/KnowledgeQuiz';
 import { calculateMathRewards } from './game/mathDatabase';
 import { calculateLogicRewards } from './game/logicPuzzleLogic';
-import { calculateMatchRewards } from './game/matchLogic';
-import { calculateFocusRewards } from './game/focusLogic';
 import { calculatePatternRewards } from './game/patternLogic';
 import { calculateKnowledgeRewards } from './game/knowledgeDatabase';
 
-type Screen = 'hub' | 'memoryFlip' | 'wordScramble' | 'wordBuilder' | 'mathChallenge' | 'logicPuzzles' | 'matchChallenge' | 'focusGame' | 'patternRecognition' | 'knowledgeQuiz';
+type Screen = 'hub' | 'memoryFlip' | 'wordScramble' | 'wordBuilder' | 'mathChallenge' | 'logicPuzzles' | 'patternRecognition' | 'knowledgeQuiz';
 type Modal = null | 'shop' | 'achievements' | 'profile' | 'statistics' | 'daily' | 'howToPlay' | 'settings';
 
 function App() {
@@ -46,8 +42,6 @@ function App() {
     wordBuilder: 'easy',
     mathChallenge: 'easy',
     logicPuzzles: 'easy',
-    matchChallenge: 'easy',
-    focusGame: 'easy',
     patternRecognition: 'easy',
     knowledgeQuiz: 'easy',
   });
@@ -985,10 +979,6 @@ function App() {
               setScreen('mathChallenge');
             } else if (mode === 'logicPuzzles') {
               setScreen('logicPuzzles');
-            } else if (mode === 'matchChallenge') {
-              setScreen('matchChallenge');
-            } else if (mode === 'focusGame') {
-              setScreen('focusGame');
             } else if (mode === 'patternRecognition') {
               setScreen('patternRecognition');
             } else if (mode === 'knowledgeQuiz') {
@@ -1097,28 +1087,6 @@ function App() {
           difficulty={gameDifficulties.logicPuzzles}
           playerData={playerData}
           onGameComplete={handleLogicComplete}
-          onBack={() => setScreen('hub')}
-          onNotification={addNotification}
-          soundEnabled={playerData.settings.soundEnabled}
-        />
-      )}
-
-      {screen === 'matchChallenge' && (
-        <MatchChallenge
-          difficulty={gameDifficulties.matchChallenge}
-          playerData={playerData}
-          onGameComplete={handleMatchComplete}
-          onBack={() => setScreen('hub')}
-          onNotification={addNotification}
-          soundEnabled={playerData.settings.soundEnabled}
-        />
-      )}
-
-      {screen === 'focusGame' && (
-        <FocusGame
-          difficulty={gameDifficulties.focusGame}
-          playerData={playerData}
-          onGameComplete={handleFocusComplete}
           onBack={() => setScreen('hub')}
           onNotification={addNotification}
           soundEnabled={playerData.settings.soundEnabled}

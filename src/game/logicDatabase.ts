@@ -70,6 +70,7 @@ export function calculateLogicRewards(
     easy: 1,
     medium: 1.5,
     hard: 2,
+    expert: 3,
   }[difficulty];
   
   baseCoins = Math.round(baseCoins * difficultyMultiplier);

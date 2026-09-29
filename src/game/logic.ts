@@ -1,4 +1,4 @@
-import { Card, Difficulty, DIFFICULTY_CONFIGS, SYMBOLS, GameState, PlayerData } from './types';
+import { Card, Difficulty, DIFFICULTY_CONFIGS, SYMBOLS, SYMBOL_CATEGORIES, GameState, PlayerData } from './types';
 import { loadGameData, saveGameData, getTodayString, getYesterdayString } from './storage';
 
 // Fisher-Yates shuffle
@@ -13,7 +13,16 @@ export function shuffleDeck<T>(array: T[]): T[] {
 
 export function createDeck(difficulty: Difficulty): Card[] {
   const config = DIFFICULTY_CONFIGS[difficulty];
-  const symbols = SYMBOLS.slice(0, config.totalPairs);
+  
+  // Randomly select a category theme for visual variety
+  const categoryKeys = Object.keys(SYMBOL_CATEGORIES) as Array<keyof typeof SYMBOL_CATEGORIES>;
+  const selectedCategory = categoryKeys[Math.floor(Math.random() * categoryKeys.length)];
+  const categorySymbols = SYMBOL_CATEGORIES[selectedCategory];
+  
+  // Shuffle the category symbols and take what we need
+  const shuffledSymbols = shuffleDeck(categorySymbols);
+  const symbols = shuffledSymbols.slice(0, config.totalPairs);
+  
   const pairs: Card[] = [];
   let id = 0;
   for (let i = 0; i < config.totalPairs; i++) {
