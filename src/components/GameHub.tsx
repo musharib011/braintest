@@ -7,8 +7,8 @@ type GameMode = 'memoryFlip' | 'wordScramble' | 'wordBuilder' | 'mathChallenge' 
 
 interface GameHubProps {
   playerData: PlayerData;
-  difficulty: Difficulty;
-  onDifficultyChange: (d: Difficulty) => void;
+  gameDifficulties: Record<GameMode, Difficulty>;
+  onDifficultyChange: (gameMode: GameMode, d: Difficulty) => void;
   onSelectGame: (mode: GameMode) => void;
   onOpenShop: () => void;
   onOpenAchievements: () => void;
@@ -24,7 +24,7 @@ interface GameHubProps {
 }
 
 export const GameHub: React.FC<GameHubProps> = ({
-  playerData, difficulty, onDifficultyChange, onSelectGame,
+  playerData, gameDifficulties, onDifficultyChange, onSelectGame,
   onOpenShop, onOpenAchievements, onOpenProfile, onOpenStatistics,
   onOpenDaily, onOpenSettings, onOpenHowToPlay,
   soundEnabled, onToggleSound, theme, onToggleTheme
@@ -89,8 +89,8 @@ export const GameHub: React.FC<GameHubProps> = ({
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Test your memory and concentration.</p>
                 <div className="flex items-center gap-2 mt-2">
                   <select
-                    value={difficulty}
-                    onChange={(e) => onDifficultyChange(e.target.value as Difficulty)}
+                    value={gameDifficulties.memoryFlip}
+                    onChange={(e) => onDifficultyChange('memoryFlip', e.target.value as Difficulty)}
                     className="text-xs px-2 py-1 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200"
                   >
                     <option value="easy">Easy</option>
@@ -117,8 +117,8 @@ export const GameHub: React.FC<GameHubProps> = ({
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Unscramble letters and discover hidden words.</p>
                 <div className="flex items-center gap-2 mt-2">
                   <select
-                    value={difficulty}
-                    onChange={(e) => onDifficultyChange(e.target.value as Difficulty)}
+                    value={gameDifficulties.wordScramble}
+                    onChange={(e) => onDifficultyChange('wordScramble', e.target.value as Difficulty)}
                     className="text-xs px-2 py-1 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200"
                   >
                     <option value="easy">Easy</option>
@@ -145,8 +145,8 @@ export const GameHub: React.FC<GameHubProps> = ({
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Create words from a set of letters.</p>
                 <div className="flex items-center gap-2 mt-2">
                   <select
-                    value={difficulty}
-                    onChange={(e) => onDifficultyChange(e.target.value as Difficulty)}
+                    value={gameDifficulties.wordBuilder}
+                    onChange={(e) => onDifficultyChange('wordBuilder', e.target.value as Difficulty)}
                     className="text-xs px-2 py-1 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200"
                   >
                     <option value="easy">Easy</option>
@@ -173,8 +173,8 @@ export const GameHub: React.FC<GameHubProps> = ({
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Solve math problems quickly and accurately.</p>
                 <div className="flex items-center gap-2 mt-2">
                   <select
-                    value={difficulty}
-                    onChange={(e) => onDifficultyChange(e.target.value as Difficulty)}
+                    value={gameDifficulties.mathChallenge}
+                    onChange={(e) => onDifficultyChange('mathChallenge', e.target.value as Difficulty)}
                     className="text-xs px-2 py-1 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200"
                   >
                     <option value="easy">Easy</option>
@@ -201,8 +201,8 @@ export const GameHub: React.FC<GameHubProps> = ({
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Test your logical reasoning skills.</p>
                 <div className="flex items-center gap-2 mt-2">
                   <select
-                    value={difficulty}
-                    onChange={(e) => onDifficultyChange(e.target.value as Difficulty)}
+                    value={gameDifficulties.logicPuzzles}
+                    onChange={(e) => onDifficultyChange('logicPuzzles', e.target.value as Difficulty)}
                     className="text-xs px-2 py-1 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200"
                   >
                     <option value="easy">Easy</option>
@@ -229,8 +229,8 @@ export const GameHub: React.FC<GameHubProps> = ({
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Match pairs quickly before time runs out.</p>
                 <div className="flex items-center gap-2 mt-2">
                   <select
-                    value={difficulty}
-                    onChange={(e) => onDifficultyChange(e.target.value as Difficulty)}
+                    value={gameDifficulties.matchChallenge}
+                    onChange={(e) => onDifficultyChange('matchChallenge', e.target.value as Difficulty)}
                     className="text-xs px-2 py-1 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200"
                   >
                     <option value="easy">Easy</option>
@@ -257,8 +257,8 @@ export const GameHub: React.FC<GameHubProps> = ({
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Test your attention and reaction speed.</p>
                 <div className="flex items-center gap-2 mt-2">
                   <select
-                    value={difficulty}
-                    onChange={(e) => onDifficultyChange(e.target.value as Difficulty)}
+                    value={gameDifficulties.focusGame}
+                    onChange={(e) => onDifficultyChange('focusGame', e.target.value as Difficulty)}
                     className="text-xs px-2 py-1 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200"
                   >
                     <option value="easy">Easy</option>
@@ -285,8 +285,8 @@ export const GameHub: React.FC<GameHubProps> = ({
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Identify patterns in sequences.</p>
                 <div className="flex items-center gap-2 mt-2">
                   <select
-                    value={difficulty}
-                    onChange={(e) => onDifficultyChange(e.target.value as Difficulty)}
+                    value={gameDifficulties.patternRecognition}
+                    onChange={(e) => onDifficultyChange('patternRecognition', e.target.value as Difficulty)}
                     className="text-xs px-2 py-1 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200"
                   >
                     <option value="easy">Easy</option>
@@ -313,8 +313,8 @@ export const GameHub: React.FC<GameHubProps> = ({
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Test your general knowledge.</p>
                 <div className="flex items-center gap-2 mt-2">
                   <select
-                    value={difficulty}
-                    onChange={(e) => onDifficultyChange(e.target.value as Difficulty)}
+                    value={gameDifficulties.knowledgeQuiz}
+                    onChange={(e) => onDifficultyChange('knowledgeQuiz', e.target.value as Difficulty)}
                     className="text-xs px-2 py-1 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200"
                   >
                     <option value="easy">Easy</option>

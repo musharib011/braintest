@@ -40,6 +40,17 @@ type Modal = null | 'shop' | 'achievements' | 'profile' | 'statistics' | 'daily'
 function App() {
   const [screen, setScreen] = useState<Screen>('hub');
   const [difficulty, setDifficulty] = useState<Difficulty>('easy');
+  const [gameDifficulties, setGameDifficulties] = useState<Record<GameMode, Difficulty>>({
+    memoryFlip: 'easy',
+    wordScramble: 'easy',
+    wordBuilder: 'easy',
+    mathChallenge: 'easy',
+    logicPuzzles: 'easy',
+    matchChallenge: 'easy',
+    focusGame: 'easy',
+    patternRecognition: 'easy',
+    knowledgeQuiz: 'easy',
+  });
   const [gameState, setGameState] = useState<GameState>(() => createInitialGameState('easy'));
   const [playerData, setPlayerData] = useState<PlayerData>(() => loadGameData());
   const [modal, setModal] = useState<Modal>(null);
@@ -520,9 +531,13 @@ function App() {
     }));
   }, []);
 
-  const handleDifficultyChange = useCallback((d: Difficulty) => {
+  const handleDifficultyChange = useCallback((gameMode: GameMode, d: Difficulty) => {
     playSoundIfEnabled(playClickSound);
-    setDifficulty(d);
+    setGameDifficulties(prev => ({ ...prev, [gameMode]: d }));
+    // Keep the old difficulty state in sync for Memory Flip
+    if (gameMode === 'memoryFlip') {
+      setDifficulty(d);
+    }
   }, [playSoundIfEnabled]);
 
   const handleBuySkin = useCallback((skinId: string): boolean => {
@@ -957,7 +972,7 @@ function App() {
       {screen === 'hub' && (
         <GameHub
           playerData={playerData}
-          difficulty={difficulty}
+          gameDifficulties={gameDifficulties}
           onDifficultyChange={handleDifficultyChange}
           onSelectGame={(mode: GameMode) => {
             if (mode === 'memoryFlip') {
@@ -966,6 +981,18 @@ function App() {
               setScreen('wordScramble');
             } else if (mode === 'wordBuilder') {
               setScreen('wordBuilder');
+            } else if (mode === 'mathChallenge') {
+              setScreen('mathChallenge');
+            } else if (mode === 'logicPuzzles') {
+              setScreen('logicPuzzles');
+            } else if (mode === 'matchChallenge') {
+              setScreen('matchChallenge');
+            } else if (mode === 'focusGame') {
+              setScreen('focusGame');
+            } else if (mode === 'patternRecognition') {
+              setScreen('patternRecognition');
+            } else if (mode === 'knowledgeQuiz') {
+              setScreen('knowledgeQuiz');
             }
           }}
           onOpenShop={() => setModal('shop')}
@@ -1034,7 +1061,7 @@ function App() {
 
       {screen === 'wordScramble' && (
         <WordScramble
-          difficulty={difficulty}
+          difficulty={gameDifficulties.wordScramble}
           playerData={playerData}
           onGameComplete={handleWordScrambleComplete}
           onBack={() => setScreen('hub')}
@@ -1045,7 +1072,7 @@ function App() {
 
       {screen === 'wordBuilder' && (
         <WordBuilder
-          difficulty={difficulty}
+          difficulty={gameDifficulties.wordBuilder}
           playerData={playerData}
           onGameComplete={handleWordBuilderComplete}
           onBack={() => setScreen('hub')}
@@ -1056,7 +1083,7 @@ function App() {
 
       {screen === 'mathChallenge' && (
         <MathChallenge
-          difficulty={difficulty}
+          difficulty={gameDifficulties.mathChallenge}
           playerData={playerData}
           onGameComplete={handleMathComplete}
           onBack={() => setScreen('hub')}
@@ -1067,7 +1094,7 @@ function App() {
 
       {screen === 'logicPuzzles' && (
         <LogicPuzzles
-          difficulty={difficulty}
+          difficulty={gameDifficulties.logicPuzzles}
           playerData={playerData}
           onGameComplete={handleLogicComplete}
           onBack={() => setScreen('hub')}
@@ -1078,7 +1105,7 @@ function App() {
 
       {screen === 'matchChallenge' && (
         <MatchChallenge
-          difficulty={difficulty}
+          difficulty={gameDifficulties.matchChallenge}
           playerData={playerData}
           onGameComplete={handleMatchComplete}
           onBack={() => setScreen('hub')}
@@ -1089,7 +1116,7 @@ function App() {
 
       {screen === 'focusGame' && (
         <FocusGame
-          difficulty={difficulty}
+          difficulty={gameDifficulties.focusGame}
           playerData={playerData}
           onGameComplete={handleFocusComplete}
           onBack={() => setScreen('hub')}
@@ -1100,7 +1127,7 @@ function App() {
 
       {screen === 'patternRecognition' && (
         <PatternRecognition
-          difficulty={difficulty}
+          difficulty={gameDifficulties.patternRecognition}
           playerData={playerData}
           onGameComplete={handlePatternComplete}
           onBack={() => setScreen('hub')}
@@ -1111,7 +1138,7 @@ function App() {
 
       {screen === 'knowledgeQuiz' && (
         <KnowledgeQuiz
-          difficulty={difficulty}
+          difficulty={gameDifficulties.knowledgeQuiz}
           playerData={playerData}
           onGameComplete={handleKnowledgeComplete}
           onBack={() => setScreen('hub')}
