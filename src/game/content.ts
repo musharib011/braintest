@@ -66,6 +66,42 @@ export const ACHIEVEMENTS: Achievement[] = [
   // Cross-game achievements
   { id: 'brain_explorer', name: 'Brain Explorer', description: 'Play all three game modes', icon: '🧩', requirement: 3, rewardCoins: 300, rewardXP: 150, statKey: '_gamesPlayedByMode' },
   { id: 'well_rounded', name: 'Well Rounded', description: 'Complete 10 games across at least 2 modes', icon: '🌟', requirement: 10, rewardCoins: 400, rewardXP: 200, statKey: '_totalGamesAllModes' },
+  // Math Challenge achievements
+  { id: 'math_first', name: 'First Calculation', description: 'Complete your first Math Challenge', icon: '🧮', requirement: 1, rewardCoins: 20, rewardXP: 10, statKey: 'mathGamesPlayed' },
+  { id: 'math_10', name: 'Math Starter', description: 'Complete 10 Math Challenges', icon: '🔢', requirement: 10, rewardCoins: 150, rewardXP: 75, statKey: 'mathGamesPlayed' },
+  { id: 'math_50', name: 'Quick Calculator', description: 'Complete 50 Math Challenges', icon: '⚡', requirement: 50, rewardCoins: 400, rewardXP: 200, statKey: 'mathGamesPlayed' },
+  { id: 'math_combo', name: 'Math Streak', description: 'Reach combo x10 in Math Challenge', icon: '🔥', requirement: 10, rewardCoins: 200, rewardXP: 100, statKey: 'mathHighestCombo' },
+  { id: 'math_perfect', name: 'Perfect Math', description: 'Complete a perfect Math Challenge', icon: '💯', requirement: 1, rewardCoins: 250, rewardXP: 125, statKey: '_mathPerfectRun' },
+  // Logic Puzzles achievements
+  { id: 'logic_first', name: 'First Puzzle', description: 'Complete your first Logic Puzzle', icon: '🧩', requirement: 1, rewardCoins: 20, rewardXP: 10, statKey: 'logicGamesPlayed' },
+  { id: 'logic_10', name: 'Logic Starter', description: 'Complete 10 Logic Puzzles', icon: '🧠', requirement: 10, rewardCoins: 150, rewardXP: 75, statKey: 'logicGamesPlayed' },
+  { id: 'logic_50', name: 'Puzzle Solver', description: 'Complete 50 Logic Puzzles', icon: '💡', requirement: 50, rewardCoins: 400, rewardXP: 200, statKey: 'logicGamesPlayed' },
+  { id: 'logic_combo', name: 'Logic Streak', description: 'Reach combo x8 in Logic Puzzles', icon: '🔥', requirement: 8, rewardCoins: 200, rewardXP: 100, statKey: 'logicHighestCombo' },
+  { id: 'logic_perfect', name: 'Perfect Logic', description: 'Complete a perfect Logic Puzzle round', icon: '✨', requirement: 1, rewardCoins: 250, rewardXP: 125, statKey: '_logicPerfectRun' },
+  // Match Challenge achievements
+  { id: 'match_first', name: 'First Match', description: 'Complete your first Match Challenge', icon: '🔗', requirement: 1, rewardCoins: 20, rewardXP: 10, statKey: 'matchGamesPlayed' },
+  { id: 'match_10', name: 'Matcher', description: 'Complete 10 Match Challenges', icon: '🎯', requirement: 10, rewardCoins: 150, rewardXP: 75, statKey: 'matchGamesPlayed' },
+  { id: 'match_50', name: 'Match Master', description: 'Complete 50 Match Challenges', icon: '🏆', requirement: 50, rewardCoins: 400, rewardXP: 200, statKey: 'matchGamesPlayed' },
+  { id: 'match_speed', name: 'Fast Matcher', description: 'Make a match in under 2 seconds', icon: '⚡', requirement: 2, rewardCoins: 200, rewardXP: 100, statKey: '_matchFastestReaction' },
+  // Focus Game achievements
+  { id: 'focus_first', name: 'First Focus', description: 'Complete your first Focus Game', icon: '🎯', requirement: 1, rewardCoins: 20, rewardXP: 10, statKey: 'focusGamesPlayed' },
+  { id: 'focus_10', name: 'Focused', description: 'Complete 10 Focus Games', icon: '👁️', requirement: 10, rewardCoins: 150, rewardXP: 75, statKey: 'focusGamesPlayed' },
+  { id: 'focus_50', name: 'Focus Master', description: 'Complete 50 Focus Games', icon: '🧘', requirement: 50, rewardCoins: 400, rewardXP: 200, statKey: 'focusGamesPlayed' },
+  { id: 'focus_speed', name: 'Fast Reaction', description: 'Hit a target in under 1 second', icon: '⚡', requirement: 1, rewardCoins: 250, rewardXP: 125, statKey: '_focusFastestReaction' },
+  // Pattern Recognition achievements
+  { id: 'pattern_first', name: 'First Pattern', description: 'Complete your first Pattern Recognition', icon: '🔷', requirement: 1, rewardCoins: 20, rewardXP: 10, statKey: 'patternGamesPlayed' },
+  { id: 'pattern_10', name: 'Pattern Finder', description: 'Complete 10 Pattern Recognition games', icon: '🔍', requirement: 10, rewardCoins: 150, rewardXP: 75, statKey: 'patternGamesPlayed' },
+  { id: 'pattern_50', name: 'Pattern Master', description: 'Complete 50 Pattern Recognition games', icon: '🎨', requirement: 50, rewardCoins: 400, rewardXP: 200, statKey: 'patternGamesPlayed' },
+  { id: 'pattern_perfect', name: 'Perfect Pattern', description: 'Complete a perfect Pattern Recognition round', icon: '💯', requirement: 1, rewardCoins: 250, rewardXP: 125, statKey: '_patternPerfectRun' },
+  // Knowledge Quiz achievements
+  { id: 'knowledge_first', name: 'First Quiz', description: 'Complete your first Knowledge Quiz', icon: '📚', requirement: 1, rewardCoins: 20, rewardXP: 10, statKey: 'knowledgeGamesPlayed' },
+  { id: 'knowledge_10', name: 'Knowledge Starter', description: 'Complete 10 Knowledge Quizzes', icon: '🎓', requirement: 10, rewardCoins: 150, rewardXP: 75, statKey: 'knowledgeGamesPlayed' },
+  { id: 'knowledge_50', name: 'Knowledge Seeker', description: 'Complete 50 Knowledge Quizzes', icon: '📖', requirement: 50, rewardCoins: 400, rewardXP: 200, statKey: 'knowledgeGamesPlayed' },
+  { id: 'knowledge_100', name: 'Quiz Master', description: 'Complete 100 Knowledge Quizzes', icon: '🏆', requirement: 100, rewardCoins: 600, rewardXP: 300, statKey: 'knowledgeGamesPlayed' },
+  { id: 'knowledge_perfect', name: 'Perfect Quiz', description: 'Complete a perfect Knowledge Quiz', icon: '✨', requirement: 1, rewardCoins: 250, rewardXP: 125, statKey: '_knowledgePerfectRun' },
+  // Multi-game achievements
+  { id: 'all_games', name: 'Complete Mind', description: 'Play all 9 game modes', icon: '🌟', requirement: 9, rewardCoins: 800, rewardXP: 400, statKey: '_gamesPlayedByMode' },
+  { id: 'six_games', name: 'Six Game Explorer', description: 'Play 6 different game modes', icon: '🎮', requirement: 6, rewardCoins: 500, rewardXP: 250, statKey: '_gamesPlayedByMode' },
 ];
 
 export function getSkinById(id: string): Skin | undefined {

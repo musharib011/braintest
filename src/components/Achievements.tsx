@@ -36,15 +36,43 @@ export const Achievements: React.FC<AchievementsProps> = ({ data, onClose }) => 
       case 'builderPerfectRuns': return stats.builderPerfectRuns;
       case 'builderHighestCombo': return stats.builderHighestCombo;
       case '_builderLongestWord': return stats.builderLongestWord.length;
+      // Math Challenge
+      case 'mathGamesPlayed': return stats.mathGamesPlayed;
+      case 'mathQuestionsAnswered': return stats.mathQuestionsAnswered;
+      case 'mathCorrectAnswers': return stats.mathCorrectAnswers;
+      case 'mathHighestCombo': return stats.mathHighestCombo;
+      case '_mathPerfectRun': return stats.mathCorrectAnswers > 0 && stats.mathCorrectAnswers === stats.mathQuestionsAnswered ? 1 : 0;
+      // Logic Puzzles
+      case 'logicGamesPlayed': return stats.logicGamesPlayed;
+      case 'logicPuzzlesSolved': return stats.logicPuzzlesSolved;
+      case 'logicHighestCombo': return stats.logicHighestCombo;
+      case '_logicPerfectRun': return stats.logicPuzzlesSolved > 0 ? 1 : 0;
+      // Match Challenge
+      case 'matchGamesPlayed': return stats.matchGamesPlayed;
+      case 'matchMatchesMade': return stats.matchMatchesMade;
+      case '_matchFastestReaction': return stats.matchFastestReaction !== null && stats.matchFastestReaction <= achievement.requirement ? 1 : 0;
+      // Focus Game
+      case 'focusGamesPlayed': return stats.focusGamesPlayed;
+      case '_focusFastestReaction': return stats.focusFastestReaction !== null && stats.focusFastestReaction <= achievement.requirement ? 1 : 0;
+      // Pattern Recognition
+      case 'patternGamesPlayed': return stats.patternGamesPlayed;
+      case 'patternPuzzlesSolved': return stats.patternPuzzlesSolved;
+      case '_patternPerfectRun': return stats.patternPuzzlesSolved > 0 ? 1 : 0;
+      // Knowledge Quiz
+      case 'knowledgeGamesPlayed': return stats.knowledgeGamesPlayed;
+      case 'knowledgeQuestionsAnswered': return stats.knowledgeQuestionsAnswered;
+      case 'knowledgeCorrectAnswers': return stats.knowledgeCorrectAnswers;
+      case '_knowledgePerfectRun': return stats.knowledgeCorrectAnswers > 0 && stats.knowledgeCorrectAnswers === stats.knowledgeQuestionsAnswered ? 1 : 0;
       // Cross-game
       case '_gamesPlayedByMode': {
         const m = stats.gamesPlayedByMode;
-        return (m.memoryFlip > 0 ? 1 : 0) + (m.wordScramble > 0 ? 1 : 0) + (m.wordBuilder > 0 ? 1 : 0);
+        return Object.values(m).filter(v => v > 0).length;
       }
       case '_totalGamesAllModes': {
         const m = stats.gamesPlayedByMode;
-        const modesPlayed = [m.memoryFlip > 0, m.wordScramble > 0, m.wordBuilder > 0].filter(Boolean).length;
-        return modesPlayed >= 2 ? (m.memoryFlip + m.wordScramble + m.wordBuilder) : 0;
+        const totalGames = Object.values(m).reduce((sum, val) => sum + val, 0);
+        const modesPlayed = Object.values(m).filter(v => v > 0).length;
+        return modesPlayed >= 2 ? totalGames : 0;
       }
       default: return 0;
     }

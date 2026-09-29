@@ -3,7 +3,7 @@ import { PlayerData, Difficulty, DIFFICULTY_CONFIGS, BestScore } from '../game/t
 import { formatScore, getXPForLevel, isBoosterActive, getBoosterTimeRemaining, formatTime } from '../game/logic';
 import { loadBestScore } from '../game/storage';
 
-type GameMode = 'memoryFlip' | 'wordScramble' | 'wordBuilder';
+type GameMode = 'memoryFlip' | 'wordScramble' | 'wordBuilder' | 'mathChallenge' | 'logicPuzzles' | 'matchChallenge' | 'focusGame' | 'patternRecognition' | 'knowledgeQuiz';
 
 interface GameHubProps {
   playerData: PlayerData;
@@ -156,6 +156,174 @@ export const GameHub: React.FC<GameHubProps> = ({
                   <button
                     onClick={() => onSelectGame('wordBuilder')}
                     className="flex-1 py-1.5 px-4 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white text-xs font-bold rounded-lg shadow transition-all transform hover:scale-[1.02] active:scale-[0.98]"
+                  >
+                    ▶ PLAY
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Math Challenge */}
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
+            <div className="flex items-start gap-3">
+              <div className="text-3xl">🧮</div>
+              <div className="flex-1">
+                <h3 className="font-bold text-gray-800 dark:text-white">MATH CHALLENGE</h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Solve math problems quickly and accurately.</p>
+                <div className="flex items-center gap-2 mt-2">
+                  <select
+                    value={difficulty}
+                    onChange={(e) => onDifficultyChange(e.target.value as Difficulty)}
+                    className="text-xs px-2 py-1 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200"
+                  >
+                    <option value="easy">Easy</option>
+                    <option value="medium">Medium</option>
+                    <option value="hard">Hard</option>
+                  </select>
+                  <button
+                    onClick={() => onSelectGame('mathChallenge')}
+                    className="flex-1 py-1.5 px-4 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white text-xs font-bold rounded-lg shadow transition-all transform hover:scale-[1.02] active:scale-[0.98]"
+                  >
+                    ▶ PLAY
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Logic Puzzles */}
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
+            <div className="flex items-start gap-3">
+              <div className="text-3xl">🧩</div>
+              <div className="flex-1">
+                <h3 className="font-bold text-gray-800 dark:text-white">LOGIC PUZZLES</h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Test your logical reasoning skills.</p>
+                <div className="flex items-center gap-2 mt-2">
+                  <select
+                    value={difficulty}
+                    onChange={(e) => onDifficultyChange(e.target.value as Difficulty)}
+                    className="text-xs px-2 py-1 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200"
+                  >
+                    <option value="easy">Easy</option>
+                    <option value="medium">Medium</option>
+                    <option value="hard">Hard</option>
+                  </select>
+                  <button
+                    onClick={() => onSelectGame('logicPuzzles')}
+                    className="flex-1 py-1.5 px-4 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white text-xs font-bold rounded-lg shadow transition-all transform hover:scale-[1.02] active:scale-[0.98]"
+                  >
+                    ▶ PLAY
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Match Challenge */}
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
+            <div className="flex items-start gap-3">
+              <div className="text-3xl">🔗</div>
+              <div className="flex-1">
+                <h3 className="font-bold text-gray-800 dark:text-white">MATCH CHALLENGE</h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Match pairs quickly before time runs out.</p>
+                <div className="flex items-center gap-2 mt-2">
+                  <select
+                    value={difficulty}
+                    onChange={(e) => onDifficultyChange(e.target.value as Difficulty)}
+                    className="text-xs px-2 py-1 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200"
+                  >
+                    <option value="easy">Easy</option>
+                    <option value="medium">Medium</option>
+                    <option value="hard">Hard</option>
+                  </select>
+                  <button
+                    onClick={() => onSelectGame('matchChallenge')}
+                    className="flex-1 py-1.5 px-4 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white text-xs font-bold rounded-lg shadow transition-all transform hover:scale-[1.02] active:scale-[0.98]"
+                  >
+                    ▶ PLAY
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Focus Game */}
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
+            <div className="flex items-start gap-3">
+              <div className="text-3xl">🎯</div>
+              <div className="flex-1">
+                <h3 className="font-bold text-gray-800 dark:text-white">FOCUS GAME</h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Test your attention and reaction speed.</p>
+                <div className="flex items-center gap-2 mt-2">
+                  <select
+                    value={difficulty}
+                    onChange={(e) => onDifficultyChange(e.target.value as Difficulty)}
+                    className="text-xs px-2 py-1 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200"
+                  >
+                    <option value="easy">Easy</option>
+                    <option value="medium">Medium</option>
+                    <option value="hard">Hard</option>
+                  </select>
+                  <button
+                    onClick={() => onSelectGame('focusGame')}
+                    className="flex-1 py-1.5 px-4 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white text-xs font-bold rounded-lg shadow transition-all transform hover:scale-[1.02] active:scale-[0.98]"
+                  >
+                    ▶ PLAY
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Pattern Recognition */}
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
+            <div className="flex items-start gap-3">
+              <div className="text-3xl">🔷</div>
+              <div className="flex-1">
+                <h3 className="font-bold text-gray-800 dark:text-white">PATTERN RECOGNITION</h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Identify patterns in sequences.</p>
+                <div className="flex items-center gap-2 mt-2">
+                  <select
+                    value={difficulty}
+                    onChange={(e) => onDifficultyChange(e.target.value as Difficulty)}
+                    className="text-xs px-2 py-1 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200"
+                  >
+                    <option value="easy">Easy</option>
+                    <option value="medium">Medium</option>
+                    <option value="hard">Hard</option>
+                  </select>
+                  <button
+                    onClick={() => onSelectGame('patternRecognition')}
+                    className="flex-1 py-1.5 px-4 bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-600 hover:to-cyan-700 text-white text-xs font-bold rounded-lg shadow transition-all transform hover:scale-[1.02] active:scale-[0.98]"
+                  >
+                    ▶ PLAY
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Knowledge Quiz */}
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
+            <div className="flex items-start gap-3">
+              <div className="text-3xl">📚</div>
+              <div className="flex-1">
+                <h3 className="font-bold text-gray-800 dark:text-white">KNOWLEDGE QUIZ</h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Test your general knowledge.</p>
+                <div className="flex items-center gap-2 mt-2">
+                  <select
+                    value={difficulty}
+                    onChange={(e) => onDifficultyChange(e.target.value as Difficulty)}
+                    className="text-xs px-2 py-1 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200"
+                  >
+                    <option value="easy">Easy</option>
+                    <option value="medium">Medium</option>
+                    <option value="hard">Hard</option>
+                  </select>
+                  <button
+                    onClick={() => onSelectGame('knowledgeQuiz')}
+                    className="flex-1 py-1.5 px-4 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white text-xs font-bold rounded-lg shadow transition-all transform hover:scale-[1.02] active:scale-[0.98]"
                   >
                     ▶ PLAY
                   </button>

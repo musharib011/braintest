@@ -37,10 +37,46 @@ const DEFAULT_DATA: PlayerData = {
     builderBestScore: 0,
     builderHighestCombo: 0,
     builderLongestWord: '',
+    // Math Challenge stats
+    mathGamesPlayed: 0,
+    mathQuestionsAnswered: 0,
+    mathCorrectAnswers: 0,
+    mathBestScore: 0,
+    mathHighestCombo: 0,
+    mathFastestAnswer: null,
+    // Logic Puzzles stats
+    logicGamesPlayed: 0,
+    logicPuzzlesSolved: 0,
+    logicBestScore: 0,
+    logicHighestCombo: 0,
+    // Match Challenge stats
+    matchGamesPlayed: 0,
+    matchMatchesMade: 0,
+    matchBestScore: 0,
+    matchFastestReaction: null,
+    // Focus Game stats
+    focusGamesPlayed: 0,
+    focusBestScore: 0,
+    focusFastestReaction: null,
+    // Pattern Recognition stats
+    patternGamesPlayed: 0,
+    patternPuzzlesSolved: 0,
+    patternBestScore: 0,
+    // Knowledge Quiz stats
+    knowledgeGamesPlayed: 0,
+    knowledgeQuestionsAnswered: 0,
+    knowledgeCorrectAnswers: 0,
+    knowledgeBestScore: 0,
     gamesPlayedByMode: {
       memoryFlip: 0,
       wordScramble: 0,
       wordBuilder: 0,
+      mathChallenge: 0,
+      logicPuzzles: 0,
+      matchChallenge: 0,
+      focusGame: 0,
+      patternRecognition: 0,
+      knowledgeQuiz: 0,
     },
   },
   dailyChallenge: {

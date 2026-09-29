@@ -17,6 +17,12 @@ export const Profile: React.FC<ProfileProps> = ({ data, onClose }) => {
   const memoryMastery = Math.min(100, data.statistics.gamesPlayedByMode.memoryFlip * 5);
   const scrambleMastery = Math.min(100, data.statistics.scrambleWordsSolved * 2);
   const builderMastery = Math.min(100, data.statistics.builderWordsCreated * 2);
+  const mathMastery = Math.min(100, data.statistics.mathCorrectAnswers * 2);
+  const logicMastery = Math.min(100, data.statistics.logicPuzzlesSolved * 5);
+  const matchMastery = Math.min(100, data.statistics.matchMatchesMade * 3);
+  const focusMastery = Math.min(100, data.statistics.focusGamesPlayed * 10);
+  const patternMastery = Math.min(100, data.statistics.patternPuzzlesSolved * 5);
+  const knowledgeMastery = Math.min(100, data.statistics.knowledgeCorrectAnswers * 2);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in overflow-y-auto">
@@ -74,6 +80,12 @@ export const Profile: React.FC<ProfileProps> = ({ data, onClose }) => {
             <MasteryBar icon="🧠" label="Memory Flip" percent={memoryMastery} />
             <MasteryBar icon="🔀" label="Word Scramble" percent={scrambleMastery} />
             <MasteryBar icon="🔤" label="Word Builder" percent={builderMastery} />
+            <MasteryBar icon="🧮" label="Math Challenge" percent={mathMastery} />
+            <MasteryBar icon="🧩" label="Logic Puzzles" percent={logicMastery} />
+            <MasteryBar icon="🔗" label="Match Challenge" percent={matchMastery} />
+            <MasteryBar icon="🎯" label="Focus Game" percent={focusMastery} />
+            <MasteryBar icon="🔷" label="Pattern Recognition" percent={patternMastery} />
+            <MasteryBar icon="📚" label="Knowledge Quiz" percent={knowledgeMastery} />
           </div>
         </div>
 

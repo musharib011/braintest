@@ -8,7 +8,7 @@ interface StatisticsProps {
 }
 
 export const Statistics: React.FC<StatisticsProps> = ({ data, onClose }) => {
-  const [tab, setTab] = useState<'global' | 'memory' | 'scramble' | 'builder'>('global');
+  const [tab, setTab] = useState<'global' | 'memory' | 'scramble' | 'builder' | 'math' | 'logic' | 'match' | 'focus' | 'pattern' | 'knowledge'>('global');
   const { statistics, streak } = data;
 
   return (
@@ -20,11 +20,17 @@ export const Statistics: React.FC<StatisticsProps> = ({ data, onClose }) => {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 mb-4 bg-gray-100 dark:bg-gray-700 rounded-xl p-1">
+        <div className="flex gap-1 mb-4 bg-gray-100 dark:bg-gray-700 rounded-xl p-1 overflow-x-auto">
           <TabButton active={tab === 'global'} onClick={() => setTab('global')} label="Global" />
           <TabButton active={tab === 'memory'} onClick={() => setTab('memory')} label="🧠" />
           <TabButton active={tab === 'scramble'} onClick={() => setTab('scramble')} label="🔀" />
           <TabButton active={tab === 'builder'} onClick={() => setTab('builder')} label="🔤" />
+          <TabButton active={tab === 'math'} onClick={() => setTab('math')} label="🧮" />
+          <TabButton active={tab === 'logic'} onClick={() => setTab('logic')} label="🧩" />
+          <TabButton active={tab === 'match'} onClick={() => setTab('match')} label="🔗" />
+          <TabButton active={tab === 'focus'} onClick={() => setTab('focus')} label="🎯" />
+          <TabButton active={tab === 'pattern'} onClick={() => setTab('pattern')} label="🔷" />
+          <TabButton active={tab === 'knowledge'} onClick={() => setTab('knowledge')} label="📚" />
         </div>
 
         {tab === 'global' && (
@@ -76,6 +82,60 @@ export const Statistics: React.FC<StatisticsProps> = ({ data, onClose }) => {
             <StatRow icon="🔥" label="Highest Combo" value={`x${statistics.builderHighestCombo}`} />
             <StatRow icon="✨" label="Perfect Runs" value={String(statistics.builderPerfectRuns)} />
             <StatRow icon="📏" label="Longest Word" value={statistics.builderLongestWord || '—'} />
+          </div>
+        )}
+
+        {tab === 'math' && (
+          <div className="space-y-2">
+            <StatRow icon="🎮" label="Games Played" value={String(statistics.mathGamesPlayed)} />
+            <StatRow icon="📝" label="Questions Answered" value={String(statistics.mathQuestionsAnswered)} />
+            <StatRow icon="✓" label="Correct Answers" value={String(statistics.mathCorrectAnswers)} />
+            <StatRow icon="⭐" label="Best Score" value={formatScore(statistics.mathBestScore)} />
+            <StatRow icon="🔥" label="Highest Combo" value={`x${statistics.mathHighestCombo}`} />
+            <StatRow icon="⚡" label="Fastest Answer" value={statistics.mathFastestAnswer !== null ? `${statistics.mathFastestAnswer.toFixed(1)}s` : '—'} />
+          </div>
+        )}
+
+        {tab === 'logic' && (
+          <div className="space-y-2">
+            <StatRow icon="🎮" label="Games Played" value={String(statistics.logicGamesPlayed)} />
+            <StatRow icon="🧩" label="Puzzles Solved" value={String(statistics.logicPuzzlesSolved)} />
+            <StatRow icon="⭐" label="Best Score" value={formatScore(statistics.logicBestScore)} />
+            <StatRow icon="🔥" label="Highest Combo" value={`x${statistics.logicHighestCombo}`} />
+          </div>
+        )}
+
+        {tab === 'match' && (
+          <div className="space-y-2">
+            <StatRow icon="🎮" label="Games Played" value={String(statistics.matchGamesPlayed)} />
+            <StatRow icon="🔗" label="Matches Made" value={String(statistics.matchMatchesMade)} />
+            <StatRow icon="⭐" label="Best Score" value={formatScore(statistics.matchBestScore)} />
+            <StatRow icon="⚡" label="Fastest Reaction" value={statistics.matchFastestReaction !== null ? `${statistics.matchFastestReaction.toFixed(1)}s` : '—'} />
+          </div>
+        )}
+
+        {tab === 'focus' && (
+          <div className="space-y-2">
+            <StatRow icon="🎮" label="Games Played" value={String(statistics.focusGamesPlayed)} />
+            <StatRow icon="⭐" label="Best Score" value={formatScore(statistics.focusBestScore)} />
+            <StatRow icon="⚡" label="Fastest Reaction" value={statistics.focusFastestReaction !== null ? `${statistics.focusFastestReaction.toFixed(1)}s` : '—'} />
+          </div>
+        )}
+
+        {tab === 'pattern' && (
+          <div className="space-y-2">
+            <StatRow icon="🎮" label="Games Played" value={String(statistics.patternGamesPlayed)} />
+            <StatRow icon="🔷" label="Patterns Solved" value={String(statistics.patternPuzzlesSolved)} />
+            <StatRow icon="⭐" label="Best Score" value={formatScore(statistics.patternBestScore)} />
+          </div>
+        )}
+
+        {tab === 'knowledge' && (
+          <div className="space-y-2">
+            <StatRow icon="🎮" label="Games Played" value={String(statistics.knowledgeGamesPlayed)} />
+            <StatRow icon="📝" label="Questions Answered" value={String(statistics.knowledgeQuestionsAnswered)} />
+            <StatRow icon="✓" label="Correct Answers" value={String(statistics.knowledgeCorrectAnswers)} />
+            <StatRow icon="⭐" label="Best Score" value={formatScore(statistics.knowledgeBestScore)} />
           </div>
         )}
 

@@ -83,7 +83,7 @@ export interface Booster {
   expiresAt: number;
 }
 
-export type GameMode = 'memoryFlip' | 'wordScramble' | 'wordBuilder';
+export type GameMode = 'memoryFlip' | 'wordScramble' | 'wordBuilder' | 'mathChallenge' | 'logicPuzzles' | 'matchChallenge' | 'focusGame' | 'patternRecognition' | 'knowledgeQuiz';
 
 export interface DailyChallenge {
   id: string;
@@ -132,11 +132,47 @@ export interface PlayerData {
     builderBestScore: number;
     builderHighestCombo: number;
     builderLongestWord: string;
+    // Math Challenge stats
+    mathGamesPlayed: number;
+    mathQuestionsAnswered: number;
+    mathCorrectAnswers: number;
+    mathBestScore: number;
+    mathHighestCombo: number;
+    mathFastestAnswer: number | null;
+    // Logic Puzzles stats
+    logicGamesPlayed: number;
+    logicPuzzlesSolved: number;
+    logicBestScore: number;
+    logicHighestCombo: number;
+    // Match Challenge stats
+    matchGamesPlayed: number;
+    matchMatchesMade: number;
+    matchBestScore: number;
+    matchFastestReaction: number | null;
+    // Focus Game stats
+    focusGamesPlayed: number;
+    focusBestScore: number;
+    focusFastestReaction: number | null;
+    // Pattern Recognition stats
+    patternGamesPlayed: number;
+    patternPuzzlesSolved: number;
+    patternBestScore: number;
+    // Knowledge Quiz stats
+    knowledgeGamesPlayed: number;
+    knowledgeQuestionsAnswered: number;
+    knowledgeCorrectAnswers: number;
+    knowledgeBestScore: number;
     // Cross-game stats
     gamesPlayedByMode: {
       memoryFlip: number;
       wordScramble: number;
       wordBuilder: number;
+      mathChallenge: number;
+      logicPuzzles: number;
+      matchChallenge: number;
+      focusGame: number;
+      patternRecognition: number;
+      knowledgeQuiz: number;
     };
   };
   dailyChallenge: {

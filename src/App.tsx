@@ -21,8 +21,20 @@ import { Notifications, Notification } from './components/Notifications';
 import { WordScramble } from './components/WordScramble';
 import { WordBuilder } from './components/WordBuilder';
 import { SettingsPanel } from './components/SettingsPanel';
+import { MathChallenge } from './components/MathChallenge';
+import { LogicPuzzles } from './components/LogicPuzzles';
+import { MatchChallenge } from './components/MatchChallenge';
+import { FocusGame } from './components/FocusGame';
+import { PatternRecognition } from './components/PatternRecognition';
+import { KnowledgeQuiz } from './components/KnowledgeQuiz';
+import { calculateMathRewards } from './game/mathDatabase';
+import { calculateLogicRewards } from './game/logicPuzzleLogic';
+import { calculateMatchRewards } from './game/matchLogic';
+import { calculateFocusRewards } from './game/focusLogic';
+import { calculatePatternRewards } from './game/patternLogic';
+import { calculateKnowledgeRewards } from './game/knowledgeDatabase';
 
-type Screen = 'hub' | 'memoryFlip' | 'wordScramble' | 'wordBuilder';
+type Screen = 'hub' | 'memoryFlip' | 'wordScramble' | 'wordBuilder' | 'mathChallenge' | 'logicPuzzles' | 'matchChallenge' | 'focusGame' | 'patternRecognition' | 'knowledgeQuiz';
 type Modal = null | 'shop' | 'achievements' | 'profile' | 'statistics' | 'daily' | 'howToPlay' | 'settings';
 
 function App() {
@@ -138,16 +150,44 @@ function App() {
         case 'builderPerfectRuns': current = newData.statistics.builderPerfectRuns; break;
         case 'builderHighestCombo': current = newData.statistics.builderHighestCombo; break;
         case '_builderLongestWord': current = newData.statistics.builderLongestWord.length; break;
+        // Math Challenge stats
+        case 'mathGamesPlayed': current = newData.statistics.mathGamesPlayed; break;
+        case 'mathQuestionsAnswered': current = newData.statistics.mathQuestionsAnswered; break;
+        case 'mathCorrectAnswers': current = newData.statistics.mathCorrectAnswers; break;
+        case 'mathHighestCombo': current = newData.statistics.mathHighestCombo; break;
+        case '_mathPerfectRun': current = newData.statistics.mathCorrectAnswers > 0 && newData.statistics.mathCorrectAnswers === newData.statistics.mathQuestionsAnswered ? 1 : 0; break;
+        // Logic Puzzles stats
+        case 'logicGamesPlayed': current = newData.statistics.logicGamesPlayed; break;
+        case 'logicPuzzlesSolved': current = newData.statistics.logicPuzzlesSolved; break;
+        case 'logicHighestCombo': current = newData.statistics.logicHighestCombo; break;
+        case '_logicPerfectRun': current = newData.statistics.logicPuzzlesSolved > 0 ? 1 : 0; break;
+        // Match Challenge stats
+        case 'matchGamesPlayed': current = newData.statistics.matchGamesPlayed; break;
+        case 'matchMatchesMade': current = newData.statistics.matchMatchesMade; break;
+        case '_matchFastestReaction': current = newData.statistics.matchFastestReaction !== null && newData.statistics.matchFastestReaction <= achievement.requirement ? 1 : 0; break;
+        // Focus Game stats
+        case 'focusGamesPlayed': current = newData.statistics.focusGamesPlayed; break;
+        case '_focusFastestReaction': current = newData.statistics.focusFastestReaction !== null && newData.statistics.focusFastestReaction <= achievement.requirement ? 1 : 0; break;
+        // Pattern Recognition stats
+        case 'patternGamesPlayed': current = newData.statistics.patternGamesPlayed; break;
+        case 'patternPuzzlesSolved': current = newData.statistics.patternPuzzlesSolved; break;
+        case '_patternPerfectRun': current = newData.statistics.patternPuzzlesSolved > 0 ? 1 : 0; break;
+        // Knowledge Quiz stats
+        case 'knowledgeGamesPlayed': current = newData.statistics.knowledgeGamesPlayed; break;
+        case 'knowledgeQuestionsAnswered': current = newData.statistics.knowledgeQuestionsAnswered; break;
+        case 'knowledgeCorrectAnswers': current = newData.statistics.knowledgeCorrectAnswers; break;
+        case '_knowledgePerfectRun': current = newData.statistics.knowledgeCorrectAnswers > 0 && newData.statistics.knowledgeCorrectAnswers === newData.statistics.knowledgeQuestionsAnswered ? 1 : 0; break;
         // Cross-game stats
         case '_gamesPlayedByMode': {
           const modes = newData.statistics.gamesPlayedByMode;
-          current = (modes.memoryFlip > 0 ? 1 : 0) + (modes.wordScramble > 0 ? 1 : 0) + (modes.wordBuilder > 0 ? 1 : 0);
+          current = Object.values(modes).filter(v => v > 0).length;
           break;
         }
         case '_totalGamesAllModes': {
           const m = newData.statistics.gamesPlayedByMode;
-          const modesPlayed = [m.memoryFlip > 0, m.wordScramble > 0, m.wordBuilder > 0].filter(Boolean).length;
-          current = modesPlayed >= 2 ? (m.memoryFlip + m.wordScramble + m.wordBuilder) : 0;
+          const totalGames = Object.values(m).reduce((sum, val) => sum + val, 0);
+          const modesPlayed = Object.values(m).filter(v => v > 0).length;
+          current = modesPlayed >= 2 ? totalGames : 0;
           break;
         }
         default: continue;
@@ -622,6 +662,292 @@ function App() {
     });
   }, [addNotification, playSoundIfEnabled, checkAchievements]);
 
+  // Math Challenge completion handler
+  const handleMathComplete = useCallback((result: {
+    score: number;
+    questionsAnswered: number;
+    correctAnswers: number;
+    highestCombo: number;
+    timeElapsed: number;
+    perfectRun: boolean;
+    fastestAnswer: number | null;
+    coinsEarned: number;
+    xpEarned: number;
+  }) => {
+    setPlayerData(prev => {
+      let newData = {
+        ...prev,
+        coins: prev.coins + result.coinsEarned,
+        statistics: {
+          ...prev.statistics,
+          mathGamesPlayed: prev.statistics.mathGamesPlayed + 1,
+          mathQuestionsAnswered: prev.statistics.mathQuestionsAnswered + result.questionsAnswered,
+          mathCorrectAnswers: prev.statistics.mathCorrectAnswers + result.correctAnswers,
+          mathBestScore: Math.max(prev.statistics.mathBestScore, result.score),
+          mathHighestCombo: Math.max(prev.statistics.mathHighestCombo, result.highestCombo),
+          mathFastestAnswer: result.fastestAnswer !== null && (prev.statistics.mathFastestAnswer === null || result.fastestAnswer < prev.statistics.mathFastestAnswer) ? result.fastestAnswer : prev.statistics.mathFastestAnswer,
+          totalCoinsEarned: prev.statistics.totalCoinsEarned + result.coinsEarned,
+          gamesPlayedByMode: {
+            ...prev.statistics.gamesPlayedByMode,
+            mathChallenge: prev.statistics.gamesPlayedByMode.mathChallenge + 1,
+          },
+        },
+      };
+
+      const xpResult = addXP(newData, result.xpEarned);
+      newData = xpResult.newData;
+
+      if (result.coinsEarned > 0) addNotification('coins', `+${result.coinsEarned} coins`, '🪙');
+      if (result.xpEarned > 0) addNotification('xp', `+${result.xpEarned} XP`, '✨');
+      if (xpResult.levelsGained > 0) {
+        addNotification('levelup', `Level ${newData.level}!`, '🎉');
+        playSoundIfEnabled(playLevelUpSound);
+      }
+      if (result.perfectRun) {
+        addNotification('perfect', 'Perfect Run!', '✨');
+      }
+
+      newData = checkAchievements(newData);
+      return newData;
+    });
+  }, [addNotification, playSoundIfEnabled, checkAchievements]);
+
+  // Logic Puzzles completion handler
+  const handleLogicComplete = useCallback((result: {
+    score: number;
+    puzzlesSolved: number;
+    correctAnswers: number;
+    highestCombo: number;
+    timeElapsed: number;
+    perfectRun: boolean;
+    coinsEarned: number;
+    xpEarned: number;
+  }) => {
+    setPlayerData(prev => {
+      let newData = {
+        ...prev,
+        coins: prev.coins + result.coinsEarned,
+        statistics: {
+          ...prev.statistics,
+          logicGamesPlayed: prev.statistics.logicGamesPlayed + 1,
+          logicPuzzlesSolved: prev.statistics.logicPuzzlesSolved + result.puzzlesSolved,
+          logicBestScore: Math.max(prev.statistics.logicBestScore, result.score),
+          logicHighestCombo: Math.max(prev.statistics.logicHighestCombo, result.highestCombo),
+          totalCoinsEarned: prev.statistics.totalCoinsEarned + result.coinsEarned,
+          gamesPlayedByMode: {
+            ...prev.statistics.gamesPlayedByMode,
+            logicPuzzles: prev.statistics.gamesPlayedByMode.logicPuzzles + 1,
+          },
+        },
+      };
+
+      const xpResult = addXP(newData, result.xpEarned);
+      newData = xpResult.newData;
+
+      if (result.coinsEarned > 0) addNotification('coins', `+${result.coinsEarned} coins`, '🪙');
+      if (result.xpEarned > 0) addNotification('xp', `+${result.xpEarned} XP`, '✨');
+      if (xpResult.levelsGained > 0) {
+        addNotification('levelup', `Level ${newData.level}!`, '🎉');
+        playSoundIfEnabled(playLevelUpSound);
+      }
+      if (result.perfectRun) {
+        addNotification('perfect', 'Perfect Run!', '✨');
+      }
+
+      newData = checkAchievements(newData);
+      return newData;
+    });
+  }, [addNotification, playSoundIfEnabled, checkAchievements]);
+
+  // Match Challenge completion handler
+  const handleMatchComplete = useCallback((result: {
+    score: number;
+    matchesFound: number;
+    attempts: number;
+    maxCombo: number;
+    timeElapsed: number;
+    perfectRun: boolean;
+    fastestReaction: number | null;
+    coinsEarned: number;
+    xpEarned: number;
+  }) => {
+    setPlayerData(prev => {
+      let newData = {
+        ...prev,
+        coins: prev.coins + result.coinsEarned,
+        statistics: {
+          ...prev.statistics,
+          matchGamesPlayed: prev.statistics.matchGamesPlayed + 1,
+          matchMatchesMade: prev.statistics.matchMatchesMade + result.matchesFound,
+          matchBestScore: Math.max(prev.statistics.matchBestScore, result.score),
+          matchFastestReaction: result.fastestReaction !== null && (prev.statistics.matchFastestReaction === null || result.fastestReaction < prev.statistics.matchFastestReaction) ? result.fastestReaction : prev.statistics.matchFastestReaction,
+          totalCoinsEarned: prev.statistics.totalCoinsEarned + result.coinsEarned,
+          gamesPlayedByMode: {
+            ...prev.statistics.gamesPlayedByMode,
+            matchChallenge: prev.statistics.gamesPlayedByMode.matchChallenge + 1,
+          },
+        },
+      };
+
+      const xpResult = addXP(newData, result.xpEarned);
+      newData = xpResult.newData;
+
+      if (result.coinsEarned > 0) addNotification('coins', `+${result.coinsEarned} coins`, '🪙');
+      if (result.xpEarned > 0) addNotification('xp', `+${result.xpEarned} XP`, '✨');
+      if (xpResult.levelsGained > 0) {
+        addNotification('levelup', `Level ${newData.level}!`, '🎉');
+        playSoundIfEnabled(playLevelUpSound);
+      }
+      if (result.perfectRun) {
+        addNotification('perfect', 'Perfect Run!', '✨');
+      }
+
+      newData = checkAchievements(newData);
+      return newData;
+    });
+  }, [addNotification, playSoundIfEnabled, checkAchievements]);
+
+  // Focus Game completion handler
+  const handleFocusComplete = useCallback((result: {
+    score: number;
+    correctHits: number;
+    falseHits: number;
+    missedTargets: number;
+    maxCombo: number;
+    timeElapsed: number;
+    perfectRun: boolean;
+    fastestReaction: number | null;
+    coinsEarned: number;
+    xpEarned: number;
+  }) => {
+    setPlayerData(prev => {
+      let newData = {
+        ...prev,
+        coins: prev.coins + result.coinsEarned,
+        statistics: {
+          ...prev.statistics,
+          focusGamesPlayed: prev.statistics.focusGamesPlayed + 1,
+          focusBestScore: Math.max(prev.statistics.focusBestScore, result.score),
+          focusFastestReaction: result.fastestReaction !== null && (prev.statistics.focusFastestReaction === null || result.fastestReaction < prev.statistics.focusFastestReaction) ? result.fastestReaction : prev.statistics.focusFastestReaction,
+          totalCoinsEarned: prev.statistics.totalCoinsEarned + result.coinsEarned,
+          gamesPlayedByMode: {
+            ...prev.statistics.gamesPlayedByMode,
+            focusGame: prev.statistics.gamesPlayedByMode.focusGame + 1,
+          },
+        },
+      };
+
+      const xpResult = addXP(newData, result.xpEarned);
+      newData = xpResult.newData;
+
+      if (result.coinsEarned > 0) addNotification('coins', `+${result.coinsEarned} coins`, '🪙');
+      if (result.xpEarned > 0) addNotification('xp', `+${result.xpEarned} XP`, '✨');
+      if (xpResult.levelsGained > 0) {
+        addNotification('levelup', `Level ${newData.level}!`, '🎉');
+        playSoundIfEnabled(playLevelUpSound);
+      }
+      if (result.perfectRun) {
+        addNotification('perfect', 'Perfect Run!', '✨');
+      }
+
+      newData = checkAchievements(newData);
+      return newData;
+    });
+  }, [addNotification, playSoundIfEnabled, checkAchievements]);
+
+  // Pattern Recognition completion handler
+  const handlePatternComplete = useCallback((result: {
+    score: number;
+    puzzlesSolved: number;
+    correctAnswers: number;
+    highestCombo: number;
+    timeElapsed: number;
+    perfectRun: boolean;
+    coinsEarned: number;
+    xpEarned: number;
+  }) => {
+    setPlayerData(prev => {
+      let newData = {
+        ...prev,
+        coins: prev.coins + result.coinsEarned,
+        statistics: {
+          ...prev.statistics,
+          patternGamesPlayed: prev.statistics.patternGamesPlayed + 1,
+          patternPuzzlesSolved: prev.statistics.patternPuzzlesSolved + result.puzzlesSolved,
+          patternBestScore: Math.max(prev.statistics.patternBestScore, result.score),
+          totalCoinsEarned: prev.statistics.totalCoinsEarned + result.coinsEarned,
+          gamesPlayedByMode: {
+            ...prev.statistics.gamesPlayedByMode,
+            patternRecognition: prev.statistics.gamesPlayedByMode.patternRecognition + 1,
+          },
+        },
+      };
+
+      const xpResult = addXP(newData, result.xpEarned);
+      newData = xpResult.newData;
+
+      if (result.coinsEarned > 0) addNotification('coins', `+${result.coinsEarned} coins`, '🪙');
+      if (result.xpEarned > 0) addNotification('xp', `+${result.xpEarned} XP`, '✨');
+      if (xpResult.levelsGained > 0) {
+        addNotification('levelup', `Level ${newData.level}!`, '🎉');
+        playSoundIfEnabled(playLevelUpSound);
+      }
+      if (result.perfectRun) {
+        addNotification('perfect', 'Perfect Run!', '✨');
+      }
+
+      newData = checkAchievements(newData);
+      return newData;
+    });
+  }, [addNotification, playSoundIfEnabled, checkAchievements]);
+
+  // Knowledge Quiz completion handler
+  const handleKnowledgeComplete = useCallback((result: {
+    score: number;
+    questionsAnswered: number;
+    correctAnswers: number;
+    highestCombo: number;
+    timeElapsed: number;
+    perfectRun: boolean;
+    coinsEarned: number;
+    xpEarned: number;
+  }) => {
+    setPlayerData(prev => {
+      let newData = {
+        ...prev,
+        coins: prev.coins + result.coinsEarned,
+        statistics: {
+          ...prev.statistics,
+          knowledgeGamesPlayed: prev.statistics.knowledgeGamesPlayed + 1,
+          knowledgeQuestionsAnswered: prev.statistics.knowledgeQuestionsAnswered + result.questionsAnswered,
+          knowledgeCorrectAnswers: prev.statistics.knowledgeCorrectAnswers + result.correctAnswers,
+          knowledgeBestScore: Math.max(prev.statistics.knowledgeBestScore, result.score),
+          totalCoinsEarned: prev.statistics.totalCoinsEarned + result.coinsEarned,
+          gamesPlayedByMode: {
+            ...prev.statistics.gamesPlayedByMode,
+            knowledgeQuiz: prev.statistics.gamesPlayedByMode.knowledgeQuiz + 1,
+          },
+        },
+      };
+
+      const xpResult = addXP(newData, result.xpEarned);
+      newData = xpResult.newData;
+
+      if (result.coinsEarned > 0) addNotification('coins', `+${result.coinsEarned} coins`, '🪙');
+      if (result.xpEarned > 0) addNotification('xp', `+${result.xpEarned} XP`, '✨');
+      if (xpResult.levelsGained > 0) {
+        addNotification('levelup', `Level ${newData.level}!`, '🎉');
+        playSoundIfEnabled(playLevelUpSound);
+      }
+      if (result.perfectRun) {
+        addNotification('perfect', 'Perfect Run!', '✨');
+      }
+
+      newData = checkAchievements(newData);
+      return newData;
+    });
+  }, [addNotification, playSoundIfEnabled, checkAchievements]);
+
   const accuracy = gameState.totalAttempts > 0 ? calculateAccuracy(gameState.matchedPairs, gameState.totalAttempts) : 0;
 
   return (
@@ -722,6 +1048,72 @@ function App() {
           difficulty={difficulty}
           playerData={playerData}
           onGameComplete={handleWordBuilderComplete}
+          onBack={() => setScreen('hub')}
+          onNotification={addNotification}
+          soundEnabled={playerData.settings.soundEnabled}
+        />
+      )}
+
+      {screen === 'mathChallenge' && (
+        <MathChallenge
+          difficulty={difficulty}
+          playerData={playerData}
+          onGameComplete={handleMathComplete}
+          onBack={() => setScreen('hub')}
+          onNotification={addNotification}
+          soundEnabled={playerData.settings.soundEnabled}
+        />
+      )}
+
+      {screen === 'logicPuzzles' && (
+        <LogicPuzzles
+          difficulty={difficulty}
+          playerData={playerData}
+          onGameComplete={handleLogicComplete}
+          onBack={() => setScreen('hub')}
+          onNotification={addNotification}
+          soundEnabled={playerData.settings.soundEnabled}
+        />
+      )}
+
+      {screen === 'matchChallenge' && (
+        <MatchChallenge
+          difficulty={difficulty}
+          playerData={playerData}
+          onGameComplete={handleMatchComplete}
+          onBack={() => setScreen('hub')}
+          onNotification={addNotification}
+          soundEnabled={playerData.settings.soundEnabled}
+        />
+      )}
+
+      {screen === 'focusGame' && (
+        <FocusGame
+          difficulty={difficulty}
+          playerData={playerData}
+          onGameComplete={handleFocusComplete}
+          onBack={() => setScreen('hub')}
+          onNotification={addNotification}
+          soundEnabled={playerData.settings.soundEnabled}
+        />
+      )}
+
+      {screen === 'patternRecognition' && (
+        <PatternRecognition
+          difficulty={difficulty}
+          playerData={playerData}
+          onGameComplete={handlePatternComplete}
+          onBack={() => setScreen('hub')}
+          onNotification={addNotification}
+          soundEnabled={playerData.settings.soundEnabled}
+        />
+      )}
+
+      {screen === 'knowledgeQuiz' && (
+        <KnowledgeQuiz
+          difficulty={difficulty}
+          playerData={playerData}
+          onGameComplete={handleKnowledgeComplete}
           onBack={() => setScreen('hub')}
           onNotification={addNotification}
           soundEnabled={playerData.settings.soundEnabled}
