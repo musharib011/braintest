@@ -6,9 +6,10 @@ interface CardProps {
   onClick: (id: number) => void;
   disabled: boolean;
   gridSize: number;
+  isMismatched: boolean;
 }
 
-export const CardComponent: React.FC<CardProps> = ({ card, onClick, disabled, gridSize }) => {
+export const CardComponent: React.FC<CardProps> = ({ card, onClick, disabled, gridSize, isMismatched }) => {
   const isRevealed = card.state === 'revealed' || card.state === 'matched';
   const isMatched = card.state === 'matched';
   
@@ -41,6 +42,7 @@ export const CardComponent: React.FC<CardProps> = ({ card, onClick, disabled, gr
         focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2
         dark:focus:ring-offset-gray-900
         ${disabled && !isRevealed ? 'cursor-not-allowed' : ''}
+        ${isMismatched ? 'card-shake' : ''}
       `}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
@@ -58,7 +60,7 @@ export const CardComponent: React.FC<CardProps> = ({ card, onClick, disabled, gr
         {/* Card Back */}
         <div
           className={`
-            card-face card-back absolute inset-0 rounded-xl flex items-center justify-center
+            card-face card-back card-back-pattern absolute inset-0 rounded-lg sm:rounded-xl flex items-center justify-center
             bg-gradient-to-br from-indigo-500 to-purple-600
             dark:from-indigo-600 dark:to-purple-800
             shadow-lg border-2 border-indigo-400/30
@@ -70,13 +72,13 @@ export const CardComponent: React.FC<CardProps> = ({ card, onClick, disabled, gr
           `}
           style={{ backfaceVisibility: 'hidden' }}
         >
-          <span className={`${backFontSize} text-white/80 select-none`}>✦</span>
+          <span className={`${backFontSize} text-white/80 select-none font-bold drop-shadow-sm`}>✦</span>
         </div>
         
         {/* Card Front */}
         <div
           className={`
-            card-face card-front absolute inset-0 rounded-xl flex items-center justify-center
+            card-face card-front absolute inset-0 rounded-lg sm:rounded-xl flex items-center justify-center
             bg-white dark:bg-gray-800
             shadow-lg border-2
             transition-all duration-300
@@ -87,7 +89,7 @@ export const CardComponent: React.FC<CardProps> = ({ card, onClick, disabled, gr
           `}
           style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
         >
-          <span className={`${fontSize} select-none`}>{card.symbol}</span>
+          <span className={`${fontSize} select-none`} role="img">{card.symbol}</span>
         </div>
       </div>
     </button>

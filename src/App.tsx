@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Difficulty, GameState, BestScore } from './game/types';
+import { Difficulty, GameState, BestScore, DIFFICULTY_CONFIGS } from './game/types';
 import { createInitialGameState, calculateScore, calculateAccuracy } from './game/logic';
 import { loadBestScore, saveBestScore, isNewBestScore, loadSoundEnabled, saveSoundEnabled, loadTheme, saveTheme } from './game/storage';
 import { playFlipSound, playMatchSound, playMismatchSound, playWinSound, playClickSound } from './game/sounds';
@@ -71,6 +71,20 @@ function App() {
       if (mismatchTimeoutRef.current !== null) clearTimeout(mismatchTimeoutRef.current);
     };
   }, []);
+
+  // Auto-pause when tab is hidden (prevent cheating)
+  useEffect(() => {
+    if (screen !== 'game') return;
+    
+    const handleVisibilityChange = () => {
+      if (document.hidden && gameState.gameStarted && !gameState.gameFinished && !gameState.paused) {
+        setGameState(prev => ({ ...prev, paused: true }));
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [screen, gameState.gameStarted, gameState.gameFinished, gameState.paused]);
 
   const clearMismatchTimeout = useCallback(() => {
     if (mismatchTimeoutRef.current !== null) {
@@ -163,6 +177,11 @@ function App() {
         const newMatchedPairs = prev.matchedPairs + 1;
         const isGameFinished = newMatchedPairs === prev.totalPairs;
         
+        // Calculate incremental score for this match
+        const config = DIFFICULTY_CONFIGS[prev.difficulty];
+        const matchPoints = Math.round(100 * config.multiplier);
+        const newRunningScore = prev.score + matchPoints;
+        
         if (isGameFinished) {
           const finalScore = calculateScore(newMatchedPairs, newMoves, prev.timeElapsed, prev.difficulty);
           const finalAccuracy = calculateAccuracy(newMatchedPairs, newAttempts);
@@ -193,12 +212,14 @@ function App() {
             locked: false,
             gameStarted: true,
             gameFinished: true,
+            mismatchedIds: [],
           };
         }
         
         return {
           ...prev,
           cards: matchedCards,
+          score: newRunningScore,
           moves: newMoves,
           matchedPairs: newMatchedPairs,
           totalAttempts: newAttempts,
@@ -226,6 +247,7 @@ function App() {
               firstCard: null,
               secondCard: null,
               locked: false,
+              mismatchedIds: [],
             };
           });
           mismatchTimeoutRef.current = null;
@@ -239,6 +261,7 @@ function App() {
           secondCard: cardId,
           locked: true,
           gameStarted: true,
+          mismatchedIds: [prev.firstCard!, cardId],
         };
       }
     });
@@ -300,6 +323,7 @@ function App() {
             locked={gameState.locked}
             onCardClick={handleCardClick}
             paused={gameState.paused}
+            mismatchedIds={gameState.mismatchedIds}
           />
         </div>
       )}

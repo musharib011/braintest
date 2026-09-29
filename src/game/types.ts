@@ -32,6 +32,7 @@ export interface GameState {
   difficulty: Difficulty;
   timeElapsed: number;
   totalAttempts: number;
+  mismatchedIds: number[];
 }
 
 export interface BestScore {

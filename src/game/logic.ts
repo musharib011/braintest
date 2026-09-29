@@ -81,5 +81,6 @@ export function createInitialGameState(difficulty: Difficulty): GameState {
     difficulty,
     timeElapsed: 0,
     totalAttempts: 0,
+    mismatchedIds: [],
   };
 }

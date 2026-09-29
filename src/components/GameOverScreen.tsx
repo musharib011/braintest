@@ -1,8 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Difficulty, DIFFICULTY_CONFIGS, BestScore } from '../game/types';
 import { formatTime, formatScore } from '../game/logic';
 import confetti from 'canvas-confetti';
-import { useEffect } from 'react';
 
 interface GameOverScreenProps {
   score: number;
@@ -22,8 +21,8 @@ export const GameOverScreen: React.FC<GameOverScreenProps> = ({
   const config = DIFFICULTY_CONFIGS[difficulty];
   
   useEffect(() => {
-    // Fire confetti
-    const duration = 2000;
+    // Fire confetti celebration
+    const duration = 2500;
     const end = Date.now() + duration;
     
     const frame = () => {
@@ -32,22 +31,34 @@ export const GameOverScreen: React.FC<GameOverScreenProps> = ({
         angle: 60,
         spread: 55,
         origin: { x: 0 },
-        colors: ['#6366f1', '#8b5cf6', '#ec4899'],
+        colors: ['#6366f1', '#8b5cf6', '#ec4899', '#f59e0b'],
       });
       confetti({
         particleCount: 3,
         angle: 120,
         spread: 55,
         origin: { x: 1 },
-        colors: ['#6366f1', '#8b5cf6', '#ec4899'],
+        colors: ['#6366f1', '#8b5cf6', '#ec4899', '#f59e0b'],
       });
       
       if (Date.now() < end) {
         requestAnimationFrame(frame);
       }
     };
+    
+    // Initial burst
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: ['#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981'],
+    });
+    
     frame();
   }, []);
+
+  // Calculate star rating based on accuracy
+  const stars = accuracy >= 80 ? 3 : accuracy >= 50 ? 2 : 1;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
@@ -58,8 +69,15 @@ export const GameOverScreen: React.FC<GameOverScreenProps> = ({
             YOU WON!
           </h2>
           
+          {/* Star rating */}
+          <div className="flex justify-center gap-1 my-2">
+            {[1, 2, 3].map(i => (
+              <span key={i} className={`text-2xl ${i <= stars ? '' : 'opacity-30'}`}>⭐</span>
+            ))}
+          </div>
+          
           {isNewBest && (
-            <div className="inline-block mt-2 px-4 py-1 bg-yellow-100 dark:bg-yellow-900/50 rounded-full">
+            <div className="inline-block mt-2 px-4 py-1.5 bg-gradient-to-r from-yellow-100 to-amber-100 dark:from-yellow-900/50 dark:to-amber-900/50 rounded-full shadow-sm">
               <span className="text-yellow-700 dark:text-yellow-300 font-bold text-sm">
                 🏆 NEW BEST SCORE!
               </span>
@@ -67,7 +85,7 @@ export const GameOverScreen: React.FC<GameOverScreenProps> = ({
           )}
         </div>
         
-        <div className="mt-6 space-y-3">
+        <div className="mt-6 space-y-2.5">
           <ResultRow label="Score" value={formatScore(score)} highlight />
           <ResultRow label="Time" value={formatTime(timeElapsed)} />
           <ResultRow label="Moves" value={String(moves)} />
@@ -84,15 +102,15 @@ export const GameOverScreen: React.FC<GameOverScreenProps> = ({
         <div className="mt-6 space-y-3">
           <button
             onClick={onPlayAgain}
-            className="w-full py-3 px-6 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold rounded-xl shadow-lg transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]"
+            className="w-full py-3.5 px-6 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/25 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]"
           >
-            PLAY AGAIN
+            🔄 PLAY AGAIN
           </button>
           <button
             onClick={onChangeDifficulty}
             className="w-full py-3 px-6 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 font-bold rounded-xl transition-all duration-200"
           >
-            CHANGE DIFFICULTY
+            🏠 CHANGE DIFFICULTY
           </button>
         </div>
       </div>
@@ -101,9 +119,9 @@ export const GameOverScreen: React.FC<GameOverScreenProps> = ({
 };
 
 const ResultRow: React.FC<{ label: string; value: string; highlight?: boolean }> = ({ label, value, highlight }) => (
-  <div className="flex justify-between items-center">
+  <div className="flex justify-between items-center px-2">
     <span className="text-gray-500 dark:text-gray-400 text-sm">{label}</span>
-    <span className={`font-bold text-lg ${highlight ? 'text-indigo-600 dark:text-indigo-400 text-xl' : 'text-gray-800 dark:text-gray-100'}`}>
+    <span className={`font-bold ${highlight ? 'text-indigo-600 dark:text-indigo-400 text-xl' : 'text-gray-800 dark:text-gray-100 text-lg'}`}>
       {value}
     </span>
   </div>

@@ -8,9 +8,10 @@ interface GameBoardProps {
   locked: boolean;
   onCardClick: (id: number) => void;
   paused: boolean;
+  mismatchedIds: number[];
 }
 
-export const GameBoard: React.FC<GameBoardProps> = ({ cards, difficulty, locked, onCardClick, paused }) => {
+export const GameBoard: React.FC<GameBoardProps> = ({ cards, difficulty, locked, onCardClick, paused, mismatchedIds }) => {
   const config = DIFFICULTY_CONFIGS[difficulty];
   const isDisabled = locked || paused;
   
@@ -24,9 +25,14 @@ export const GameBoard: React.FC<GameBoardProps> = ({ cards, difficulty, locked,
     config.cols <= 6 ? 'gap-1.5 sm:gap-2' :
     'gap-1 sm:gap-1.5';
 
+  const maxWidth = 
+    config.cols <= 4 ? 'max-w-lg' :
+    config.cols <= 6 ? 'max-w-2xl' :
+    'max-w-3xl';
+
   return (
     <div 
-      className={`grid ${gridClass} ${gapClass} w-full max-w-4xl mx-auto`}
+      className={`grid ${gridClass} ${gapClass} w-full ${maxWidth} mx-auto`}
       role="grid"
       aria-label="Game board"
     >
@@ -37,6 +43,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ cards, difficulty, locked,
           onClick={onCardClick}
           disabled={isDisabled}
           gridSize={config.cols}
+          isMismatched={mismatchedIds.includes(card.id)}
         />
       ))}
     </div>
