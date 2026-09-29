@@ -1,347 +1,568 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { TrafficEscapeEngine, GameScreen } from './game/engine';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Difficulty, GameState, BestScore, PlayerData } from './game/types';
+import { createInitialGameState, calculateScore, calculateAccuracy, addXP, calculateMatchReward, calculateGameCompleteReward, checkDailyChallengeCompletion, updateStreak, getDailyChallenge, isBoosterActive } from './game/logic';
+import { getTodayString } from './game/storage';
+import { loadGameData, saveGameData, resetGameData, loadBestScore, saveBestScore, isNewBestScore } from './game/storage';
+import { playFlipSound, playMatchSound, playMismatchSound, playWinSound, playClickSound, playLevelUpSound, playAchievementSound, playComboSound } from './game/sounds';
+import { ACHIEVEMENTS, SKINS } from './game/content';
+import { GameMenu } from './components/GameMenu';
+import { GameBoard } from './components/GameBoard';
+import { GameHUD } from './components/GameHUD';
+import { GameOverScreen } from './components/GameOverScreen';
+import { PauseOverlay } from './components/PauseOverlay';
+import { HowToPlay } from './components/HowToPlay';
+import { Shop } from './components/Shop';
+import { Achievements } from './components/Achievements';
+import { Profile } from './components/Profile';
+import { Statistics } from './components/Statistics';
+import { DailyChallenge } from './components/DailyChallenge';
+import { Notifications, Notification } from './components/Notifications';
 
-type ActiveEffectType = 'shield' | 'slow' | 'multiplier';
-
-interface ActiveEffect {
-  type: ActiveEffectType;
-  timer: number;
-  maxTimer: number;
-}
+type Screen = 'menu' | 'game';
+type Modal = null | 'shop' | 'achievements' | 'profile' | 'statistics' | 'daily' | 'howToPlay';
 
 function App() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const engineRef = useRef<TrafficEscapeEngine | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  
-  const [screen, setScreen] = useState<GameScreen>('menu');
-  const [score, setScore] = useState(0);
-  const [distance, setDistance] = useState(0);
-  const [bestScore, setBestScore] = useState(0);
+  const [screen, setScreen] = useState<Screen>('menu');
+  const [difficulty, setDifficulty] = useState<Difficulty>('easy');
+  const [gameState, setGameState] = useState<GameState>(() => createInitialGameState('easy'));
+  const [playerData, setPlayerData] = useState<PlayerData>(() => loadGameData());
+  const [modal, setModal] = useState<Modal>(null);
   const [isNewBest, setIsNewBest] = useState(false);
-  const [effects, setEffects] = useState<ActiveEffect[]>([]);
-  const [soundEnabled, setSoundEnabled] = useState(true);
-  const [finalScore, setFinalScore] = useState(0);
-  const [finalDistance, setFinalDistance] = useState(0);
+  const [bestScore, setBestScore] = useState<BestScore | null>(null);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [lastGameRewards, setLastGameRewards] = useState({ coins: 0, xp: 0 });
+  
+  const timerRef = useRef<number | null>(null);
+  const mismatchTimeoutRef = useRef<number | null>(null);
+  const notifIdRef = useRef(0);
 
-  // Initialize engine
+  // Apply theme
   useEffect(() => {
-    if (!canvasRef.current) return;
-    
-    const engine = new TrafficEscapeEngine(canvasRef.current, {
-      onScoreChange: setScore,
-      onDistanceChange: setDistance,
-      onGameOver: (s, d, isNew) => {
-        setFinalScore(s);
-        setFinalDistance(d);
-        setIsNewBest(isNew);
-        if (isNew) setBestScore(s);
-      },
-      onEffectChange: setEffects,
-      onScreenChange: setScreen,
-    });
-    
-    engineRef.current = engine;
-    
-    // Load best score
-    try {
-      const saved = localStorage.getItem('trafficEscapeBest');
-      if (saved) setBestScore(parseInt(saved, 10) || 0);
-    } catch {}
-    
-    // Render initial background
-    engine.returnToMenu();
-    
+    document.documentElement.classList.remove('light', 'dark');
+    document.documentElement.classList.add(playerData.settings.theme);
+    document.documentElement.setAttribute('data-theme', playerData.settings.theme);
+  }, [playerData.settings.theme]);
+
+  // Save player data on change
+  useEffect(() => {
+    saveGameData(playerData);
+  }, [playerData]);
+
+  // Timer
+  useEffect(() => {
+    if (screen !== 'game') return;
+    if (gameState.gameStarted && !gameState.gameFinished && !gameState.paused) {
+      timerRef.current = window.setInterval(() => {
+        setGameState(prev => ({ ...prev, timeElapsed: prev.timeElapsed + 1 }));
+      }, 1000);
+    }
     return () => {
-      engine.destroy();
-      engineRef.current = null;
+      if (timerRef.current !== null) { clearInterval(timerRef.current); timerRef.current = null; }
+    };
+  }, [screen, gameState.gameStarted, gameState.gameFinished, gameState.paused]);
+
+  // Cleanup
+  useEffect(() => {
+    return () => {
+      if (timerRef.current !== null) clearInterval(timerRef.current);
+      if (mismatchTimeoutRef.current !== null) clearTimeout(mismatchTimeoutRef.current);
     };
   }, []);
 
-  // Handle resize
+  // Auto-pause on tab hidden
   useEffect(() => {
-    const handleResize = () => {
-      engineRef.current?.resize();
+    if (screen !== 'game') return;
+    const handleVisibility = () => {
+      if (document.hidden && gameState.gameStarted && !gameState.gameFinished && !gameState.paused) {
+        setGameState(prev => ({ ...prev, paused: true }));
+      }
     };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, [screen, gameState.gameStarted, gameState.gameFinished, gameState.paused]);
+
+  const addNotification = useCallback((type: Notification['type'], message: string, icon?: string) => {
+    const id = ++notifIdRef.current;
+    setNotifications(prev => [...prev.slice(-4), { id, type, message, icon }]);
   }, []);
 
-  // Sound toggle
-  useEffect(() => {
-    engineRef.current?.setSoundEnabled(soundEnabled);
-  }, [soundEnabled]);
-
-  const handleStart = useCallback(() => {
-    engineRef.current?.start();
+  const removeNotification = useCallback((id: number) => {
+    setNotifications(prev => prev.filter(n => n.id !== id));
   }, []);
+
+  const playSoundIfEnabled = useCallback((soundFn: () => void) => {
+    if (playerData.settings.soundEnabled) soundFn();
+  }, [playerData.settings.soundEnabled]);
+
+  const clearMismatchTimeout = useCallback(() => {
+    if (mismatchTimeoutRef.current !== null) {
+      clearTimeout(mismatchTimeoutRef.current);
+      mismatchTimeoutRef.current = null;
+    }
+  }, []);
+
+  // Check achievements
+  const checkAchievements = useCallback((data: PlayerData): PlayerData => {
+    const newData = { ...data, achievementsUnlocked: [...data.achievementsUnlocked] };
+    let coinsEarned = 0;
+    let xpEarned = 0;
+
+    for (const achievement of ACHIEVEMENTS) {
+      if (newData.achievementsUnlocked.includes(achievement.id)) continue;
+
+      let current = 0;
+      switch (achievement.statKey) {
+        case 'totalMoves': current = newData.statistics.totalMoves; break;
+        case 'gamesWon': current = newData.statistics.gamesWon; break;
+        case 'perfectRuns': current = newData.statistics.perfectRuns; break;
+        case 'totalPairsMatched': current = newData.statistics.totalPairsMatched; break;
+        case 'highestCombo': current = newData.statistics.highestCombo; break;
+        case 'totalCoinsEarned': current = newData.statistics.totalCoinsEarned; break;
+        case 'dailyChallengesCompleted': current = newData.statistics.dailyChallengesCompleted; break;
+        case 'bestTimeEasy': current = newData.statistics.bestTimeEasy !== null && newData.statistics.bestTimeEasy <= achievement.requirement ? achievement.requirement : 0; break;
+        case 'bestTimeMedium': current = newData.statistics.bestTimeMedium !== null && newData.statistics.bestTimeMedium <= achievement.requirement ? achievement.requirement : 0; break;
+        case '_level': current = newData.level; break;
+        case '_streak': current = newData.streak.longest; break;
+        default: continue;
+      }
+
+      if (current >= achievement.requirement) {
+        newData.achievementsUnlocked.push(achievement.id);
+        coinsEarned += achievement.rewardCoins;
+        xpEarned += achievement.rewardXP;
+        addNotification('achievement', `${achievement.name} unlocked!`, achievement.icon);
+        playSoundIfEnabled(playAchievementSound);
+      }
+    }
+
+    if (coinsEarned > 0) {
+      newData.coins += coinsEarned;
+      newData.statistics.totalCoinsEarned += coinsEarned;
+      addNotification('coins', `+${coinsEarned} coins`, '🪙');
+    }
+    if (xpEarned > 0) {
+      const result = addXP(newData, xpEarned);
+      newData.coins = result.newData.coins;
+      newData.xp = result.newData.xp;
+      newData.level = result.newData.level;
+      newData.totalXPEarned = result.newData.totalXPEarned;
+      addNotification('xp', `+${xpEarned} XP`, '✨');
+      if (result.levelsGained > 0) {
+        addNotification('levelup', `Level ${newData.level}!`, '🎉');
+        playSoundIfEnabled(playLevelUpSound);
+      }
+    }
+
+    return newData;
+  }, [addNotification, playSoundIfEnabled]);
+
+  const handleStartGame = useCallback(() => {
+    playSoundIfEnabled(playClickSound);
+    const newState = createInitialGameState(difficulty);
+    setGameState(newState);
+    setScreen('game');
+    setIsNewBest(false);
+    setBestScore(loadBestScore(difficulty));
+    
+    // Game started XP
+    setPlayerData(prev => {
+      const result = addXP(prev, 5);
+      return {
+        ...result.newData,
+        statistics: { ...result.newData.statistics, gamesPlayed: result.newData.statistics.gamesPlayed + 1 },
+      };
+    });
+    addNotification('xp', '+5 XP', '✨');
+  }, [difficulty, playSoundIfEnabled, addNotification]);
 
   const handleRestart = useCallback(() => {
-    engineRef.current?.restart();
-  }, []);
+    playSoundIfEnabled(playClickSound);
+    clearMismatchTimeout();
+    const newState = createInitialGameState(difficulty);
+    setGameState(newState);
+    setIsNewBest(false);
+    setBestScore(loadBestScore(difficulty));
+    
+    setPlayerData(prev => {
+      const result = addXP(prev, 5);
+      return {
+        ...result.newData,
+        statistics: { ...result.newData.statistics, gamesPlayed: result.newData.statistics.gamesPlayed + 1 },
+      };
+    });
+  }, [difficulty, playSoundIfEnabled, clearMismatchTimeout]);
+
+  const handleQuitToMenu = useCallback(() => {
+    playSoundIfEnabled(playClickSound);
+    if (timerRef.current !== null) { clearInterval(timerRef.current); timerRef.current = null; }
+    clearMismatchTimeout();
+    setScreen('menu');
+  }, [playSoundIfEnabled, clearMismatchTimeout]);
 
   const handlePause = useCallback(() => {
-    engineRef.current?.pause();
-  }, []);
+    playSoundIfEnabled(playClickSound);
+    setGameState(prev => ({ ...prev, paused: true }));
+  }, [playSoundIfEnabled]);
 
   const handleResume = useCallback(() => {
-    engineRef.current?.resume();
-  }, []);
+    playSoundIfEnabled(playClickSound);
+    setGameState(prev => ({ ...prev, paused: false }));
+  }, [playSoundIfEnabled]);
 
-  const handleMenu = useCallback(() => {
-    engineRef.current?.returnToMenu();
-  }, []);
+  const handleCardClick = useCallback((cardId: number) => {
+    setGameState(prev => {
+      if (prev.locked || prev.paused || prev.gameFinished) return prev;
+      
+      const clickedCard = prev.cards.find(c => c.id === cardId);
+      if (!clickedCard || clickedCard.state === 'matched' || clickedCard.state === 'revealed') return prev;
+      
+      const newCards = prev.cards.map(c => c.id === cardId ? { ...c, state: 'revealed' as const } : c);
+      
+      if (prev.firstCard === null) {
+        playSoundIfEnabled(playFlipSound);
+        return { ...prev, cards: newCards, firstCard: cardId, gameStarted: true };
+      }
+      
+      const firstCardObj = prev.cards.find(c => c.id === prev.firstCard);
+      if (!firstCardObj) return prev;
+      if (prev.firstCard === cardId) return prev;
+      
+      const newMoves = prev.moves + 1;
+      const newAttempts = prev.totalAttempts + 1;
+      
+      if (firstCardObj.pairId === clickedCard.pairId) {
+        // MATCH
+        playSoundIfEnabled(playMatchSound);
+        const matchedCards = newCards.map(c => 
+          c.id === prev.firstCard || c.id === cardId ? { ...c, state: 'matched' as const } : c
+        );
+        
+        const newMatchedPairs = prev.matchedPairs + 1;
+        const newCombo = prev.combo + 1;
+        const newMaxCombo = Math.max(prev.maxCombo, newCombo);
+        
+        // Calculate rewards
+        const reward = calculateMatchReward(newCombo);
+        
+        // Update player data
+        setPlayerData(prevData => {
+          let newData = {
+            ...prevData,
+            coins: prevData.coins + reward.coins,
+            statistics: {
+              ...prevData.statistics,
+              totalPairsMatched: prevData.statistics.totalPairsMatched + 1,
+              totalMoves: prevData.statistics.totalMoves + 2,
+              highestCombo: Math.max(prevData.statistics.highestCombo, newMaxCombo),
+              totalCoinsEarned: prevData.statistics.totalCoinsEarned + reward.coins,
+            },
+          };
+          
+          const xpResult = addXP(newData, reward.xp);
+          newData = xpResult.newData;
+          
+          if (newCombo >= 2) {
+            addNotification('combo', `Combo x${newCombo}!`, '🔥');
+            playSoundIfEnabled(() => playComboSound(newCombo));
+          }
+          if (reward.coins > 0) addNotification('coins', `+${reward.coins}`, '🪙');
+          if (reward.xp > 0) addNotification('xp', `+${reward.xp} XP`, '✨');
+          if (xpResult.levelsGained > 0) {
+            addNotification('levelup', `Level ${newData.level}!`, '🎉');
+            playSoundIfEnabled(playLevelUpSound);
+          }
+          
+          return newData;
+        });
+        
+        const isGameFinished = newMatchedPairs === prev.totalPairs;
+        
+        if (isGameFinished) {
+          const finalScore = calculateScore(newMatchedPairs, newMoves, prev.timeElapsed, prev.difficulty);
+          const finalAccuracy = calculateAccuracy(newMatchedPairs, newAttempts);
+          const perfectRun = prev.perfectRun;
+          
+          const gameReward = calculateGameCompleteReward(prev.difficulty, finalAccuracy, prev.timeElapsed, perfectRun);
+          
+          // Update best score
+          const newBest = isNewBestScore(prev.difficulty, finalScore);
+          if (newBest) {
+            saveBestScore(prev.difficulty, { score: finalScore, time: prev.timeElapsed, moves: newMoves, accuracy: finalAccuracy });
+          }
+          setIsNewBest(newBest);
+          setBestScore(loadBestScore(prev.difficulty));
+          setLastGameRewards({ coins: gameReward.coins, xp: gameReward.xp });
+          
+          // Update player data for game completion
+          setPlayerData(prevData => {
+            let newData = {
+              ...prevData,
+              coins: prevData.coins + gameReward.coins,
+              statistics: {
+                ...prevData.statistics,
+                gamesWon: prevData.statistics.gamesWon + 1,
+                totalCoinsEarned: prevData.statistics.totalCoinsEarned + gameReward.coins,
+                perfectRuns: prevData.statistics.perfectRuns + (perfectRun ? 1 : 0),
+              },
+            };
+            
+            // Update best times
+            const timeKey = `bestTime${prev.difficulty.charAt(0).toUpperCase() + prev.difficulty.slice(1)}` as 'bestTimeEasy' | 'bestTimeMedium' | 'bestTimeHard';
+            const currentBest = newData.statistics[timeKey];
+            if (currentBest === null || prev.timeElapsed < currentBest) {
+              newData.statistics = { ...newData.statistics, [timeKey]: prev.timeElapsed };
+            }
+            
+            // Add XP
+            const xpResult = addXP(newData, gameReward.xp);
+            newData = xpResult.newData;
+            
+            if (perfectRun) {
+              addNotification('perfect', 'PERFECT RUN!', '✨');
+            }
+            addNotification('coins', `+${gameReward.coins} coins`, '🪙');
+            addNotification('xp', `+${gameReward.xp} XP`, '✨');
+            if (xpResult.levelsGained > 0) {
+              addNotification('levelup', `Level ${newData.level}!`, '🎉');
+              playSoundIfEnabled(playLevelUpSound);
+            }
+            
+            // Check daily challenge
+            const gameResult = {
+              difficulty: prev.difficulty,
+              accuracy: finalAccuracy,
+              timeElapsed: prev.timeElapsed,
+              moves: newMoves,
+              matchedPairs: newMatchedPairs,
+              combo: newMaxCombo,
+              perfectRun,
+              won: true,
+            };
+            
+            // Ensure daily challenge date is set for today
+            if (!newData.dailyChallenge.date || newData.dailyChallenge.date !== getTodayString()) {
+              newData.dailyChallenge = { date: getTodayString(), challengeId: getDailyChallenge().id, completed: false, progress: 0 };
+            }
+            
+            if (checkDailyChallengeCompletion(newData, gameResult)) {
+              const challenge = getDailyChallenge();
+              newData.dailyChallenge = { ...newData.dailyChallenge, completed: true };
+              newData.coins += challenge.rewardCoins;
+              newData.statistics.totalCoinsEarned += challenge.rewardCoins;
+              newData.statistics.dailyChallengesCompleted += 1;
+              const dailyXpResult = addXP(newData, challenge.rewardXP);
+              newData = dailyXpResult.newData;
+              addNotification('daily', 'Daily Challenge Complete!', '📅');
+              addNotification('coins', `+${challenge.rewardCoins} coins`, '🪙');
+              addNotification('xp', `+${challenge.rewardXP} XP`, '✨');
+              
+              // Update streak
+              const streakResult = updateStreak(newData);
+              newData = streakResult.newData;
+              if (streakResult.streakIncreased) {
+                addNotification('streak', `${newData.streak.current} day streak!`, '🔥');
+              }
+              if (streakResult.milestoneReached) {
+                const milestoneCoins = streakResult.milestoneReached * 100;
+                newData.coins += milestoneCoins;
+                newData.statistics.totalCoinsEarned += milestoneCoins;
+                addNotification('coins', `Streak milestone: +${milestoneCoins}`, '🪙');
+              }
+            }
+            
+            // Check achievements
+            newData = checkAchievements(newData);
+            
+            return newData;
+          });
+          
+          setTimeout(() => playSoundIfEnabled(playWinSound), 300);
+          
+          return {
+            ...prev, cards: matchedCards, score: finalScore, moves: newMoves,
+            matchedPairs: newMatchedPairs, totalAttempts: newAttempts,
+            firstCard: null, secondCard: null, locked: false,
+            gameStarted: true, gameFinished: true, combo: newCombo,
+            maxCombo: newMaxCombo, mismatchedIds: [],
+          };
+        }
+        
+        return {
+          ...prev, cards: matchedCards, moves: newMoves,
+          matchedPairs: newMatchedPairs, totalAttempts: newAttempts,
+          firstCard: null, secondCard: null, locked: false,
+          gameStarted: true, combo: newCombo, maxCombo: newMaxCombo,
+          mismatchedIds: [],
+        };
+      } else {
+        // MISMATCH
+        playSoundIfEnabled(playMismatchSound);
+        
+        clearMismatchTimeout();
+        mismatchTimeoutRef.current = window.setTimeout(() => {
+          setGameState(prevState => {
+            const hiddenCards = prevState.cards.map(c =>
+              (c.id === prevState.firstCard || c.id === prevState.secondCard) && c.state === 'revealed'
+                ? { ...c, state: 'hidden' as const } : c
+            );
+            return { ...prevState, cards: hiddenCards, firstCard: null, secondCard: null, locked: false, mismatchedIds: [] };
+          });
+          mismatchTimeoutRef.current = null;
+        }, 900);
+        
+        // Update stats for moves
+        setPlayerData(prevData => ({
+          ...prevData,
+          statistics: { ...prevData.statistics, totalMoves: prevData.statistics.totalMoves + 2 },
+        }));
+        
+        return {
+          ...prev, cards: newCards, moves: newMoves, totalAttempts: newAttempts,
+          secondCard: cardId, locked: true, gameStarted: true,
+          combo: 0, perfectRun: false, mismatchedIds: [prev.firstCard!, cardId],
+        };
+      }
+    });
+  }, [playSoundIfEnabled, clearMismatchTimeout, addNotification, checkAchievements]);
 
   const handleToggleSound = useCallback(() => {
-    setSoundEnabled(prev => !prev);
+    setPlayerData(prev => ({
+      ...prev,
+      settings: { ...prev.settings, soundEnabled: !prev.settings.soundEnabled },
+    }));
   }, []);
 
-  // Touch controls
-  const handleTouchLeftStart = useCallback((e: React.TouchEvent | React.MouseEvent) => {
-    e.preventDefault();
-    engineRef.current?.setTouchLeft(true);
+  const handleToggleTheme = useCallback(() => {
+    setPlayerData(prev => ({
+      ...prev,
+      settings: { ...prev.settings, theme: prev.settings.theme === 'light' ? 'dark' : 'light' },
+    }));
   }, []);
 
-  const handleTouchLeftEnd = useCallback((e: React.TouchEvent | React.MouseEvent) => {
-    e.preventDefault();
-    engineRef.current?.setTouchLeft(false);
-  }, []);
+  const handleDifficultyChange = useCallback((d: Difficulty) => {
+    playSoundIfEnabled(playClickSound);
+    setDifficulty(d);
+  }, [playSoundIfEnabled]);
 
-  const handleTouchRightStart = useCallback((e: React.TouchEvent | React.MouseEvent) => {
-    e.preventDefault();
-    engineRef.current?.setTouchRight(true);
-  }, []);
+  const handleBuySkin = useCallback((skinId: string): boolean => {
+    const skin = SKINS.find(s => s.id === skinId);
+    if (!skin) return false;
+    if (playerData.skinsOwned.includes(skinId)) return false;
+    if (playerData.coins < skin.price) return false;
+    
+    setPlayerData(prev => ({
+      ...prev,
+      coins: prev.coins - skin.price,
+      skinsOwned: [...prev.skinsOwned, skinId],
+    }));
+    addNotification('coins', `Bought ${skin.name}!`, skin.icon);
+    return true;
+  }, [playerData, addNotification]);
 
-  const handleTouchRightEnd = useCallback((e: React.TouchEvent | React.MouseEvent) => {
-    e.preventDefault();
-    engineRef.current?.setTouchRight(false);
-  }, []);
+  const handleEquipSkin = useCallback((skinId: string) => {
+    if (!playerData.skinsOwned.includes(skinId)) return;
+    setPlayerData(prev => ({ ...prev, equippedSkin: skinId }));
+  }, [playerData]);
 
-  const getEffectIcon = (type: ActiveEffectType) => {
-    switch (type) {
-      case 'shield': return '🛡️';
-      case 'slow': return '⏱️';
-      case 'multiplier': return '×2';
-    }
-  };
+  const handleBuyBooster = useCallback((multiplier: number, durationMinutes: number, cost: number): boolean => {
+    if (playerData.coins < cost) return false;
+    const expiresAt = Date.now() + durationMinutes * 60 * 1000;
+    setPlayerData(prev => ({
+      ...prev,
+      coins: prev.coins - cost,
+      booster: { multiplier, expiresAt },
+    }));
+    return true;
+  }, [playerData]);
 
-  const getEffectColor = (type: ActiveEffectType) => {
-    switch (type) {
-      case 'shield': return 'bg-blue-500';
-      case 'slow': return 'bg-yellow-500';
-      case 'multiplier': return 'bg-green-500';
-    }
-  };
+  const handleResetProgress = useCallback(() => {
+    const fresh = resetGameData();
+    setPlayerData(fresh);
+    addNotification('xp', 'Progress reset', '🗑️');
+  }, [addNotification]);
 
-  const formatDistance = (d: number) => {
-    if (d >= 1000) return `${(d / 1000).toFixed(1)}km`;
-    return `${d}m`;
-  };
+  const accuracy = gameState.totalAttempts > 0 ? calculateAccuracy(gameState.matchedPairs, gameState.totalAttempts) : 0;
 
   return (
-    <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center overflow-hidden select-none">
-      {/* Game Container */}
-      <div 
-        ref={containerRef}
-        className="relative w-full max-w-[400px] mx-auto flex flex-col items-center"
-        style={{ height: 'min(100vh, 100dvh, 750px)' }}
-      >
-        {/* Canvas */}
-        <canvas
-          ref={canvasRef}
-          className="rounded-lg shadow-2xl block"
-          style={{ touchAction: 'none' }}
+    <div className={`min-h-screen transition-colors duration-300 ${playerData.settings.theme === 'dark' ? 'bg-gray-900' : 'bg-gradient-to-br from-slate-50 to-indigo-50'}`}>
+      <Notifications notifications={notifications} onRemove={removeNotification} />
+      
+      {screen === 'menu' && (
+        <GameMenu
+          difficulty={difficulty}
+          onDifficultyChange={handleDifficultyChange}
+          onStartGame={handleStartGame}
+          onShowHowToPlay={() => setModal('howToPlay')}
+          onOpenShop={() => setModal('shop')}
+          onOpenAchievements={() => setModal('achievements')}
+          onOpenProfile={() => setModal('profile')}
+          onOpenStatistics={() => setModal('statistics')}
+          onOpenDaily={() => setModal('daily')}
+          playerData={playerData}
+          soundEnabled={playerData.settings.soundEnabled}
+          onToggleSound={handleToggleSound}
+          theme={playerData.settings.theme}
+          onToggleTheme={handleToggleTheme}
+          onResetProgress={handleResetProgress}
         />
-
-        {/* HUD - visible during gameplay */}
-        {screen === 'playing' && (
-          <div className="absolute top-0 left-0 right-0 p-3 pointer-events-none">
-            <div className="flex items-center justify-between">
-              <div className="bg-black/60 backdrop-blur-sm rounded-lg px-3 py-1.5">
-                <div className="text-yellow-400 font-bold text-sm">⭐ {score.toLocaleString()}</div>
-              </div>
-              <div className="bg-black/60 backdrop-blur-sm rounded-lg px-3 py-1.5">
-                <div className="text-white font-medium text-sm">📏 {formatDistance(distance)}</div>
-              </div>
-              <button
-                onClick={handlePause}
-                className="pointer-events-auto bg-black/60 backdrop-blur-sm rounded-lg px-3 py-1.5 hover:bg-black/80 transition-colors"
-              >
-                <span className="text-white text-sm">⏸️</span>
-              </button>
-            </div>
-            
-            {/* Active effects */}
-            {effects.length > 0 && (
-              <div className="flex gap-2 mt-2 justify-center">
-                {effects.map((effect, i) => (
-                  <div key={i} className={`${getEffectColor(effect.type)} rounded-full px-2 py-0.5 flex items-center gap-1 shadow-lg`}>
-                    <span className="text-xs">{getEffectIcon(effect.type)}</span>
-                    <div className="w-12 h-1.5 bg-black/30 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-white/80 rounded-full transition-all duration-200"
-                        style={{ width: `${(effect.timer / effect.maxTimer) * 100}%` }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Menu Screen */}
-        {screen === 'menu' && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 backdrop-blur-sm rounded-lg animate-fade-in">
-            <div className="text-center px-6">
-              <div className="text-5xl mb-3 animate-bounce">🏎️</div>
-              <h1 className="text-3xl sm:text-4xl font-black text-white mb-1 tracking-tight">
-                TRAFFIC
-              </h1>
-              <h1 className="text-3xl sm:text-4xl font-black bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent mb-3">
-                ESCAPE
-              </h1>
-              <p className="text-gray-300 text-sm mb-6">Dodge traffic. Survive. Set records.</p>
-              
-              {bestScore > 0 && (
-                <div className="bg-white/10 rounded-xl px-4 py-2 mb-4 inline-block">
-                  <div className="text-yellow-400 text-xs font-medium">🏆 BEST SCORE</div>
-                  <div className="text-white text-xl font-bold">{bestScore.toLocaleString()}</div>
-                </div>
-              )}
-              
-              <div className="space-y-3">
-                <button
-                  onClick={handleStart}
-                  className="w-full py-3.5 px-8 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white text-lg font-bold rounded-xl shadow-lg shadow-green-500/30 transition-all transform hover:scale-105 active:scale-95"
-                >
-                  ▶ PLAY
-                </button>
-                
-                <div className="flex gap-2">
-                  <button
-                    onClick={handleToggleSound}
-                    className="flex-1 py-2.5 px-4 bg-white/10 hover:bg-white/20 text-white font-medium rounded-xl transition-colors"
-                  >
-                    {soundEnabled ? '🔊 Sound' : '🔇 Muted'}
-                  </button>
-                </div>
-              </div>
-              
-              <div className="mt-6 text-gray-400 text-xs space-y-1">
-                <p>🎮 Arrow keys / WASD to move</p>
-                <p>📱 Touch buttons on mobile</p>
-                <p>⏸️ ESC or P to pause</p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Pause Screen */}
-        {screen === 'paused' && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm rounded-lg animate-fade-in">
-            <div className="text-center px-6">
-              <div className="text-4xl mb-3">⏸️</div>
-              <h2 className="text-2xl font-bold text-white mb-6">PAUSED</h2>
-              
-              <div className="space-y-3 w-full max-w-[200px] mx-auto">
-                <button
-                  onClick={handleResume}
-                  className="w-full py-3 px-6 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white font-bold rounded-xl shadow-lg transition-all transform hover:scale-105 active:scale-95"
-                >
-                  ▶ RESUME
-                </button>
-                <button
-                  onClick={handleRestart}
-                  className="w-full py-3 px-6 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl transition-colors"
-                >
-                  🔄 RESTART
-                </button>
-                <button
-                  onClick={handleMenu}
-                  className="w-full py-3 px-6 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl transition-colors"
-                >
-                  🏠 MENU
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Game Over Screen */}
-        {screen === 'gameover' && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 backdrop-blur-sm rounded-lg animate-fade-in">
-            <div className="text-center px-6 w-full max-w-[300px]">
-              <div className="text-4xl mb-2">💥</div>
-              <h2 className="text-2xl font-bold text-white mb-1">GAME OVER</h2>
-              
-              {isNewBest && (
-                <div className="inline-block mb-3 px-3 py-1 bg-gradient-to-r from-yellow-500 to-amber-500 rounded-full">
-                  <span className="text-white font-bold text-sm">🏆 NEW BEST!</span>
-                </div>
-              )}
-              
-              <div className="bg-white/10 rounded-xl p-4 mb-4 space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-300 text-sm">Score</span>
-                  <span className="text-yellow-400 font-bold text-lg">{finalScore.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-300 text-sm">Distance</span>
-                  <span className="text-white font-bold">{formatDistance(finalDistance)}</span>
-                </div>
-                <div className="flex justify-between items-center pt-2 border-t border-white/10">
-                  <span className="text-gray-300 text-sm">Best</span>
-                  <span className="text-yellow-400 font-bold">{bestScore.toLocaleString()}</span>
-                </div>
-              </div>
-              
-              <div className="space-y-3">
-                <button
-                  onClick={handleRestart}
-                  className="w-full py-3.5 px-6 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white text-lg font-bold rounded-xl shadow-lg shadow-green-500/30 transition-all transform hover:scale-105 active:scale-95"
-                >
-                  🔄 PLAY AGAIN
-                </button>
-                <button
-                  onClick={handleMenu}
-                  className="w-full py-3 px-6 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl transition-colors"
-                >
-                  🏠 MENU
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Mobile Touch Controls */}
-      {screen === 'playing' && (
-        <div className="fixed bottom-0 left-0 right-0 flex justify-between p-4 pb-6 pointer-events-none sm:hidden">
-          <button
-            onTouchStart={handleTouchLeftStart}
-            onTouchEnd={handleTouchLeftEnd}
-            onMouseDown={handleTouchLeftStart}
-            onMouseUp={handleTouchLeftEnd}
-            onMouseLeave={handleTouchLeftEnd}
-            className="pointer-events-auto w-20 h-20 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center active:bg-white/40 transition-colors border-2 border-white/30"
-            aria-label="Move left"
-          >
-            <span className="text-3xl text-white">◀</span>
-          </button>
-          <button
-            onTouchStart={handleTouchRightStart}
-            onTouchEnd={handleTouchRightEnd}
-            onMouseDown={handleTouchRightStart}
-            onMouseUp={handleTouchRightEnd}
-            onMouseLeave={handleTouchRightEnd}
-            className="pointer-events-auto w-20 h-20 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center active:bg-white/40 transition-colors border-2 border-white/30"
-            aria-label="Move right"
-          >
-            <span className="text-3xl text-white">▶</span>
-          </button>
+      )}
+      
+      {screen === 'game' && (
+        <div className="min-h-screen flex flex-col items-center p-3 sm:p-4 pt-4 sm:pt-6">
+          <GameHUD
+            score={gameState.score}
+            moves={gameState.moves}
+            timeElapsed={gameState.timeElapsed}
+            matchedPairs={gameState.matchedPairs}
+            totalPairs={gameState.totalPairs}
+            accuracy={accuracy}
+            difficulty={gameState.difficulty}
+            combo={gameState.combo}
+            onPause={handlePause}
+            onRestart={handleRestart}
+            soundEnabled={playerData.settings.soundEnabled}
+            onToggleSound={handleToggleSound}
+          />
+          <GameBoard
+            cards={gameState.cards}
+            difficulty={gameState.difficulty}
+            locked={gameState.locked}
+            onCardClick={handleCardClick}
+            paused={gameState.paused}
+            mismatchedIds={gameState.mismatchedIds}
+            skinId={playerData.equippedSkin}
+          />
         </div>
       )}
+      
+      {gameState.gameFinished && screen === 'game' && (
+        <GameOverScreen
+          score={gameState.score}
+          timeElapsed={gameState.timeElapsed}
+          moves={gameState.moves}
+          accuracy={accuracy}
+          difficulty={gameState.difficulty}
+          isNewBest={isNewBest}
+          bestScore={bestScore}
+          perfectRun={gameState.perfectRun}
+          maxCombo={gameState.maxCombo}
+          coinsEarned={lastGameRewards.coins}
+          xpEarned={lastGameRewards.xp}
+          onPlayAgain={handleRestart}
+          onChangeDifficulty={handleQuitToMenu}
+        />
+      )}
+      
+      {gameState.paused && !gameState.gameFinished && screen === 'game' && (
+        <PauseOverlay onResume={handleResume} onRestart={handleRestart} onQuitToMenu={handleQuitToMenu} />
+      )}
+      
+      {modal === 'howToPlay' && <HowToPlay onClose={() => setModal(null)} />}
+      {modal === 'shop' && <Shop data={playerData} onClose={() => setModal(null)} onBuySkin={handleBuySkin} onEquipSkin={handleEquipSkin} onBuyBooster={handleBuyBooster} />}
+      {modal === 'achievements' && <Achievements data={playerData} onClose={() => setModal(null)} />}
+      {modal === 'profile' && <Profile data={playerData} onClose={() => setModal(null)} />}
+      {modal === 'statistics' && <Statistics data={playerData} onClose={() => setModal(null)} />}
+      {modal === 'daily' && <DailyChallenge data={playerData} onClose={() => setModal(null)} onStartChallenge={handleStartGame} />}
     </div>
   );
 }
